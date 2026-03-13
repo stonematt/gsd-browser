@@ -17,20 +17,20 @@ created: 2026-03-13
 
 | Property | Value |
 |----------|-------|
-| **Framework** | vitest |
-| **Config file** | vitest.config.ts or "none — Wave 0 installs" |
-| **Quick run command** | `npx vitest run --reporter=verbose` |
-| **Full suite command** | `npx vitest run` |
-| **Estimated runtime** | ~10 seconds |
+| **Framework** | node:test (built-in) |
+| **Config file** | none — built-in |
+| **Quick run command** | `node --test test/renderer.test.js` |
+| **Full suite command** | `node --test test/renderer.test.js test/server.test.js` |
+| **Estimated runtime** | ~5 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `npx vitest run --reporter=verbose`
-- **After every plan wave:** Run `npx vitest run`
+- **After every task commit:** Run quick test command for affected module
+- **After every plan wave:** Run full suite command
 - **Before `/gsd:verify-work`:** Full suite must be green
-- **Max feedback latency:** 10 seconds
+- **Max feedback latency:** 5 seconds
 
 ---
 
@@ -38,11 +38,10 @@ created: 2026-03-13
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 0 | REND-01 | integration | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 02-01-02 | 01 | 1 | SERV-02 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 02-01-03 | 01 | 1 | REND-01 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 02-01-04 | 01 | 1 | REND-02 | unit | `npx vitest run` | ❌ W0 | ⬜ pending |
-| 02-01-05 | 01 | 1 | SERV-03 | integration | `npx vitest run` | ❌ W0 | ⬜ pending |
+| 02-01-01 | 01 | 1 | SERV-02, SERV-03, REND-01, REND-02 | unit | `node --test test/renderer.test.js` | ❌ W0 | ⬜ pending |
+| 02-01-02 | 01 | 1 | REND-02 | file check | `test -f public/styles/markdown.css && grep -q ".markdown-body" public/styles/markdown.css` | ❌ W0 | ⬜ pending |
+| 02-02-01 | 02 | 2 | SERV-02, SERV-03, REND-01, REND-02 | integration | `node --test test/server.test.js` | ❌ W0 | ⬜ pending |
+| 02-02-02 | 02 | 2 | REND-01, REND-02 | manual | checkpoint:human-verify | N/A | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -50,11 +49,10 @@ created: 2026-03-13
 
 ## Wave 0 Requirements
 
-- [ ] `tests/rendering/markdown-render.test.ts` — stubs for REND-01 (GFM rendering)
-- [ ] `tests/rendering/syntax-highlight.test.ts` — stubs for REND-02 (syntax highlighting)
-- [ ] `tests/rendering/mermaid-render.test.ts` — stubs for SERV-03 (Mermaid diagrams)
-- [ ] `tests/rendering/static-serve.test.ts` — stubs for SERV-02 (static file serving)
-- [ ] vitest + happy-dom — install test framework if not present
+- [ ] `test/renderer.test.js` — unit tests for renderer module (GFM, Shiki, Mermaid)
+- [ ] `test/server.test.js` — integration tests for server routes (/render, /, /styles)
+
+*Tests created as part of TDD tasks in Plan 01 and Plan 02.*
 
 ---
 
@@ -62,8 +60,8 @@ created: 2026-03-13
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| Mermaid SVG renders visually correct diagrams | SERV-03 | SVG output needs visual check | Open browser, load file with mermaid block, verify diagram renders |
-| Prose typography is readable (line height, font size, max-width) | REND-01 | Visual/subjective layout check | Open browser, load long markdown file, verify readable layout |
+| Mermaid SVG renders visually correct diagrams | REND-01 | SVG output needs visual check | Open browser, load file with mermaid block, verify diagram renders |
+| Prose typography is readable (line height, font size, max-width) | REND-02 | Visual/subjective layout check | Open browser, load long markdown file, verify readable layout |
 
 ---
 
@@ -73,7 +71,7 @@ created: 2026-03-13
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
+- [ ] Feedback latency < 5s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending

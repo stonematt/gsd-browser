@@ -49,8 +49,8 @@ Plans:
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 02-01-PLAN.md — Rendering pipeline module (markdown-it + Shiki + Mermaid) + CSS stylesheet
-- [ ] 02-02-PLAN.md — Server route integration (/render, /, static CSS) + visual verification
+- [x] 02-01-PLAN.md — Rendering pipeline module (markdown-it + Shiki + Mermaid) + CSS stylesheet
+- [x] 02-02-PLAN.md — Server route integration (/render, /, static CSS) + visual verification
 
 ### Phase 3: Source Registration
 **Goal**: Users can manage document sources via CLI and have those sources persist across restarts

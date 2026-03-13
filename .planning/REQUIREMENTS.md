@@ -10,8 +10,8 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Server
 
 - [ ] **SERV-01**: Local HTTP server starts with `npx gsd-browser` and opens browser automatically
-- [ ] **SERV-02**: Server renders GitHub-Flavored Markdown (tables, task lists, fenced code, strikethrough, footnotes)
-- [ ] **SERV-03**: Code blocks display with syntax highlighting and language detection
+- [x] **SERV-02**: Server renders GitHub-Flavored Markdown (tables, task lists, fenced code, strikethrough, footnotes)
+- [x] **SERV-03**: Code blocks display with syntax highlighting and language detection
 - [x] **SERV-04**: Every page load reads fresh file content from disk (no caching)
 - [x] **SERV-05**: Server port is configurable via `--port` flag
 - [x] **SERV-06**: Server binds to localhost only (127.0.0.1)
@@ -38,8 +38,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Rendering
 
-- [ ] **REND-01**: Mermaid fenced code blocks render as diagrams
-- [ ] **REND-02**: Readable default typography with max-width prose container
+- [x] **REND-01**: Mermaid fenced code blocks render as diagrams
+- [x] **REND-02**: Readable default typography with max-width prose container
 
 ### Design
 
@@ -92,8 +92,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SERV-01 | Phase 6 | Pending |
-| SERV-02 | Phase 2 | Pending |
-| SERV-03 | Phase 2 | Pending |
+| SERV-02 | Phase 2 | Complete |
+| SERV-03 | Phase 2 | Complete |
 | SERV-04 | Phase 1 | Complete |
 | SERV-05 | Phase 1 | Complete |
 | SERV-06 | Phase 1 | Complete |
@@ -111,8 +111,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NAV-04 | Phase 5 | Pending |
 | NAV-05 | Phase 5 | Pending |
 | NAV-06 | Phase 5 | Pending |
-| REND-01 | Phase 2 | Pending |
-| REND-02 | Phase 2 | Pending |
+| REND-01 | Phase 2 | Complete |
+| REND-02 | Phase 2 | Complete |
 | DSGN-01 | Phase 4 | Pending |
 | DSGN-02 | Phase 4 | Pending |
 | DIST-01 | Phase 6 | Pending |

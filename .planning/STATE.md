@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-13T19:55:50.037Z"
+stopped_at: Completed 02-rendering-02-01-PLAN.md
+last_updated: "2026-03-13T20:31:53.324Z"
 last_activity: 2026-03-13 — Roadmap created; 26 requirements mapped across 6 phases
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
   percent: 0
 ---
 
@@ -52,6 +52,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 01-foundation P01 | 2 | 2 tasks | 5 files |
 | Phase 01-foundation P02 | 4 | 2 tasks | 3 files |
+| Phase 02-rendering P01 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,10 @@ Recent decisions affecting current work:
 - [Phase 01-foundation]: CSP_HEADER as named constant in server.js for easy Phase 4 script-src upgrade
 - [Phase 01-foundation]: .md files served as text/plain in Phase 1 — no rendering until Phase 4
 - [Phase 01-foundation]: start() returns fastify instance to enable test verification of server.address()
+- [Phase 02-rendering]: Two-pass Mermaid rendering: async pre-pass extracts and renders diagrams, then synchronous md.render() injects via fence override
+- [Phase 02-rendering]: CJS dynamic import pattern for ESM-only Shiki: await import('shiki') inside initRenderer()
+- [Phase 02-rendering]: Mermaid v11 + svgdom compatible with htmlLabels: false — open question from research resolved
+- [Phase 02-rendering]: html: false in markdown-it preserves strict CSP; script-src none stays intact through rendering pipeline
 
 ### Pending Todos
 
@@ -86,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-13T19:55:50.035Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-rendering/02-CONTEXT.md
+Last session: 2026-03-13T20:31:53.322Z
+Stopped at: Completed 02-rendering-02-01-PLAN.md
+Resume file: None

@@ -46,7 +46,7 @@ Plans:
   2. Fenced code blocks display with syntax highlighting and language labels
   3. Mermaid fenced code blocks render as diagrams (not raw text)
   4. Prose renders in a max-width container with readable line height and font size
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 02-01-PLAN.md — Rendering pipeline module (markdown-it + Shiki + Mermaid) + CSS stylesheet
@@ -103,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-03-13 |
-| 2. Rendering | 0/2 | Planning complete | - |
+| 2. Rendering | 1/2 | In Progress|  |
 | 3. Source Registration | 0/TBD | Not started | - |
 | 4. Browser UI | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |

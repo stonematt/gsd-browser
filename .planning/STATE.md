@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-rendering-02-01-PLAN.md
-last_updated: "2026-03-13T20:31:53.324Z"
-last_activity: 2026-03-13 — Roadmap created; 26 requirements mapped across 6 phases
+stopped_at: Completed 02-rendering-02-02-PLAN.md (checkpoint:human-verify Task 2 pending)
+last_updated: "2026-03-13T20:35:30.000Z"
+last_activity: 2026-03-13 — Phase 02 Plan 02 Task 1 complete; awaiting visual verification checkpoint
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Instantly browse and read the markdown artifacts that agents are actively writing, across multiple repos, without leaving the browser.
-**Current focus:** Phase 1 — Foundation
+**Current focus:** Phase 2 — Rendering
 
 ## Current Position
 
-Phase: 1 of 6 (Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-13 — Roadmap created; 26 requirements mapped across 6 phases
+Phase: 2 of 6 (Rendering)
+Plan: 2 of 2 in current phase (Task 2 checkpoint awaiting human visual verification)
+Status: In progress — awaiting checkpoint
+Last activity: 2026-03-13 — Phase 02 Plan 02 Task 1 complete; /render + / routes wired to renderer pipeline
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 25%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-foundation P01 | 2 | 2 tasks | 5 files |
 | Phase 01-foundation P02 | 4 | 2 tasks | 3 files |
 | Phase 02-rendering P01 | 2min | 2 tasks | 4 files |
+| Phase 02-rendering P02 | 3min | 1 task completed (Task 2 checkpoint pending) | 2 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [Phase 02-rendering]: CJS dynamic import pattern for ESM-only Shiki: await import('shiki') inside initRenderer()
 - [Phase 02-rendering]: Mermaid v11 + svgdom compatible with htmlLabels: false — open question from research resolved
 - [Phase 02-rendering]: html: false in markdown-it preserves strict CSP; script-src none stays intact through rendering pipeline
+- [Phase 02-rendering plan 02]: Register @fastify/static before route definitions to avoid Fastify prefix shadowing pitfall
+- [Phase 02-rendering plan 02]: decorateReply: false on @fastify/static prevents reply decoration conflict with reply.send()
+- [Phase 02-rendering plan 02]: Path traversal check uses path.resolve(realBase, requestedPath) without fs.realpath on target — enables 403 vs 404 for non-existent paths
 
 ### Pending Todos
 
@@ -91,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-13T20:31:53.322Z
-Stopped at: Completed 02-rendering-02-01-PLAN.md
+Last session: 2026-03-13T20:35:30Z
+Stopped at: 02-rendering-02-02-PLAN.md Task 2 (checkpoint:human-verify) — visual verification of rendered markdown pages
 Resume file: None

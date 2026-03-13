@@ -13,7 +13,7 @@ gsd-browser is built in six phases ordered by dependency and security-first disc
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Secure localhost HTTP server with path safety and CSP headers (completed 2026-03-13)
-- [ ] **Phase 2: Rendering** - GFM markdown rendering with syntax highlighting, fresh-from-disk on every request
+- [x] **Phase 2: Rendering** - GFM markdown rendering with syntax highlighting, fresh-from-disk on every request (completed 2026-03-13)
 - [ ] **Phase 3: Source Registration** - CLI source management with persistence and convention-based discovery
 - [ ] **Phase 4: Browser UI** - Vanilla JS frontend shell with file tree, repo switcher, and dark theme
 - [ ] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams
@@ -46,7 +46,7 @@ Plans:
   2. Fenced code blocks display with syntax highlighting and language labels
   3. Mermaid fenced code blocks render as diagrams (not raw text)
   4. Prose renders in a max-width container with readable line height and font size
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md — Rendering pipeline module (markdown-it + Shiki + Mermaid) + CSS stylesheet
@@ -103,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-03-13 |
-| 2. Rendering | 1/2 | In Progress|  |
+| 2. Rendering | 2/2 | Complete   | 2026-03-13 |
 | 3. Source Registration | 0/TBD | Not started | - |
 | 4. Browser UI | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |

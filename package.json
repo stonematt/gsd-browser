@@ -1,0 +1,21 @@
+{
+  "name": "gsd-browser",
+  "version": "0.0.1",
+  "description": "Browse markdown artifacts that AI agents write, fresh from disk",
+  "main": "src/server.js",
+  "bin": {
+    "gsd-browser": "bin/gsd-browser.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "fastify": "^5.8.2",
+    "mime-types": "^3.0.2",
+    "minimist": "^1.2.8"
+  }
+}

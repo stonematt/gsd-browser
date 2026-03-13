@@ -8,6 +8,7 @@ const os = require('node:os');
 const { execSync } = require('node:child_process');
 
 const { createServer, start } = require('../src/server.js');
+const { initRenderer } = require('../src/renderer.js');
 
 let testDir;
 
@@ -16,6 +17,26 @@ before(async () => {
   await fs.writeFile(path.join(testDir, 'valid.txt'), 'hello');
   await fs.mkdir(path.join(testDir, 'subdir'));
   await fs.writeFile(path.join(testDir, 'subdir', 'nested.txt'), 'nested');
+
+  // Markdown files for /render route tests
+  await fs.writeFile(path.join(testDir, 'README.md'), '# Hello World\n\nThis is a test.\n');
+  await fs.writeFile(path.join(testDir, 'test.md'), [
+    '# Test Doc',
+    '',
+    '| Col A | Col B |',
+    '|-------|-------|',
+    '| 1     | 2     |',
+    '',
+    '```javascript',
+    'const x = 1;',
+    '```',
+    '',
+    '- [x] done',
+    '- [ ] todo',
+  ].join('\n'));
+
+  // initRenderer required for /render route to work via fastify.inject()
+  await initRenderer();
 });
 
 after(async () => {
@@ -180,4 +201,111 @@ test('CLI: no args exits with code 1', () => {
   } catch (err) {
     assert.equal(err.status, 1, `expected exit code 1, got ${err.status}`);
   }
+});
+
+// ============================================================
+// Phase 2 Plan 02: /render route, static CSS, and root / route
+// ============================================================
+
+// SERV-02: /render route
+test('SERV-02: GET /render?path=test.md returns 200 with HTML content-type', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.headers['content-type'].includes('text/html'), `expected text/html, got ${response.headers['content-type']}`);
+  await fastify.close();
+});
+
+test('SERV-02: GET /render response contains <!DOCTYPE html>', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  assert.ok(response.body.includes('<!DOCTYPE html>'), 'response body should contain <!DOCTYPE html>');
+  await fastify.close();
+});
+
+test('REND-02: GET /render response contains .markdown-body', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  assert.ok(response.body.includes('markdown-body'), 'response body should contain markdown-body class');
+  await fastify.close();
+});
+
+test('REND-02: GET /render response contains breadcrumb with file path', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  assert.ok(response.body.includes('breadcrumb'), 'response body should contain breadcrumb element');
+  assert.ok(response.body.includes('test.md'), 'response body should contain the file path');
+  await fastify.close();
+});
+
+test('REND-02: GET /render response links to /styles/markdown.css', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  assert.ok(response.body.includes('/styles/markdown.css'), 'response body should link to /styles/markdown.css');
+  await fastify.close();
+});
+
+test('SERV-02: GET /render?path=../evil returns 403', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=../evil' });
+  assert.equal(response.statusCode, 403);
+  await fastify.close();
+});
+
+test('SERV-02: GET /render without path param returns 400', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render' });
+  assert.equal(response.statusCode, 400);
+  await fastify.close();
+});
+
+test('SERV-02: GET /render?path=nonexistent.md returns 404', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=nonexistent.md' });
+  assert.equal(response.statusCode, 404);
+  await fastify.close();
+});
+
+test('SERV-08: GET /render has CSP header', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  const csp = response.headers['content-security-policy'];
+  assert.ok(csp, 'Content-Security-Policy header should be present');
+  await fastify.close();
+});
+
+test('SERV-04: GET /render has Cache-Control: no-store', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  assert.equal(response.headers['cache-control'], 'no-store');
+  await fastify.close();
+});
+
+test('REND-02: GET /styles/markdown.css returns 200 text/css', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/styles/markdown.css' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.headers['content-type'].includes('text/css'), `expected text/css, got ${response.headers['content-type']}`);
+  await fastify.close();
+});
+
+test('SERV-02: GET / with README.md present returns 200 with rendered HTML', async () => {
+  const fastify = createServer(testDir);
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.headers['content-type'].includes('text/html'), `expected text/html, got ${response.headers['content-type']}`);
+  assert.ok(response.body.includes('<!DOCTYPE html>'), 'response body should contain <!DOCTYPE html>');
+  await fastify.close();
+});
+
+test('GET / without README.md falls back to directory listing', async () => {
+  const noReadmeDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-noreadme-'));
+  await fs.writeFile(path.join(noReadmeDir, 'file.txt'), 'content');
+  const fastify = createServer(noReadmeDir);
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  // Should be JSON directory listing
+  const body = JSON.parse(response.body);
+  assert.equal(body.type, 'directory');
+  await fastify.close();
+  await fs.rm(noReadmeDir, { recursive: true, force: true });
 });

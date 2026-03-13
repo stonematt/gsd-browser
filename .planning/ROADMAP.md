@@ -34,8 +34,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold + TDD filesystem module (path traversal protection)
-- [ ] 01-02-PLAN.md — Fastify server + CLI entry point + integration tests
+- [x] 01-01-PLAN.md — Project scaffold + TDD filesystem module (path traversal protection)
+- [x] 01-02-PLAN.md — Fastify server + CLI entry point + integration tests
 
 ### Phase 2: Rendering
 **Goal**: Markdown files render as readable, syntax-highlighted HTML in the browser
@@ -46,7 +46,11 @@ Plans:
   2. Fenced code blocks display with syntax highlighting and language labels
   3. Mermaid fenced code blocks render as diagrams (not raw text)
   4. Prose renders in a max-width container with readable line height and font size
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Rendering pipeline module (markdown-it + Shiki + Mermaid) + CSS stylesheet
+- [ ] 02-02-PLAN.md — Server route integration (/render, /, static CSS) + visual verification
 
 ### Phase 3: Source Registration
 **Goal**: Users can manage document sources via CLI and have those sources persist across restarts
@@ -99,7 +103,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-03-13 |
-| 2. Rendering | 0/TBD | Not started | - |
+| 2. Rendering | 0/2 | Planning complete | - |
 | 3. Source Registration | 0/TBD | Not started | - |
 | 4. Browser UI | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |

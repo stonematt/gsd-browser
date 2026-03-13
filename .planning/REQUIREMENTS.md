@@ -12,11 +12,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **SERV-01**: Local HTTP server starts with `npx gsd-browser` and opens browser automatically
 - [ ] **SERV-02**: Server renders GitHub-Flavored Markdown (tables, task lists, fenced code, strikethrough, footnotes)
 - [ ] **SERV-03**: Code blocks display with syntax highlighting and language detection
-- [ ] **SERV-04**: Every page load reads fresh file content from disk (no caching)
-- [ ] **SERV-05**: Server port is configurable via `--port` flag
-- [ ] **SERV-06**: Server binds to localhost only (127.0.0.1)
+- [x] **SERV-04**: Every page load reads fresh file content from disk (no caching)
+- [x] **SERV-05**: Server port is configurable via `--port` flag
+- [x] **SERV-06**: Server binds to localhost only (127.0.0.1)
 - [x] **SERV-07**: Path traversal protection prevents access outside registered sources
-- [ ] **SERV-08**: CSP headers prevent XSS from rendered markdown content
+- [x] **SERV-08**: CSP headers prevent XSS from rendered markdown content
 
 ### Source Management
 
@@ -94,11 +94,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SERV-01 | Phase 6 | Pending |
 | SERV-02 | Phase 2 | Pending |
 | SERV-03 | Phase 2 | Pending |
-| SERV-04 | Phase 1 | Pending |
-| SERV-05 | Phase 1 | Pending |
-| SERV-06 | Phase 1 | Pending |
+| SERV-04 | Phase 1 | Complete |
+| SERV-05 | Phase 1 | Complete |
+| SERV-06 | Phase 1 | Complete |
 | SERV-07 | Phase 1 | Complete |
-| SERV-08 | Phase 1 | Pending |
+| SERV-08 | Phase 1 | Complete |
 | SRC-01 | Phase 3 | Pending |
 | SRC-02 | Phase 3 | Pending |
 | SRC-03 | Phase 3 | Pending |

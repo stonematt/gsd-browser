@@ -12,7 +12,7 @@ gsd-browser is built in six phases ordered by dependency and security-first disc
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Foundation** - Secure localhost HTTP server with path safety and CSP headers
+- [x] **Phase 1: Foundation** - Secure localhost HTTP server with path safety and CSP headers (completed 2026-03-13)
 - [ ] **Phase 2: Rendering** - GFM markdown rendering with syntax highlighting, fresh-from-disk on every request
 - [ ] **Phase 3: Source Registration** - CLI source management with persistence and convention-based discovery
 - [ ] **Phase 4: Browser UI** - Vanilla JS frontend shell with file tree, repo switcher, and dark theme
@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. A request for a path outside any registered source root returns a 403, not file content
   4. All responses include Content-Security-Policy headers blocking XSS
   5. Server starts on a custom port when `--port` is passed; prints a clear error on port conflict
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Project scaffold + TDD filesystem module (path traversal protection)
@@ -98,7 +98,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/2 | In Progress|  |
+| 1. Foundation | 2/2 | Complete   | 2026-03-13 |
 | 2. Rendering | 0/TBD | Not started | - |
 | 3. Source Registration | 0/TBD | Not started | - |
 | 4. Browser UI | 0/TBD | Not started | - |

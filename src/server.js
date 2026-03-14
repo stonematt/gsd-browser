@@ -6,11 +6,14 @@ const Fastify = require('fastify');
 const mime = require('mime-types');
 const { isPathAllowed, readFileIfAllowed } = require('./filesystem.js');
 const { initRenderer, renderMarkdown, buildPage } = require('./renderer.js');
-const { enrichSourcesWithConventions } = require('./sources.js');
+const { enrichSourcesWithConventions, addSource, removeSource, listSources } = require('./sources.js');
 
 // CSP header value — defined as a named constant for easy Phase 4 update
 // Phase 4: change script-src 'none' to script-src 'self' when adding frontend JS
 const CSP_HEADER = "default-src 'self'; script-src 'none'; object-src 'none'";
+
+// Relaxed CSP for the /sources management page — allows inline script execution
+const MANAGEMENT_CSP = "default-src 'self'; script-src 'self'; object-src 'none'";
 
 /**
  * Find which source contains the requested path (for path traversal check and routing).
@@ -36,6 +39,10 @@ async function findSourceForPath(requestedPath, sources) {
  * @returns {import('fastify').FastifyInstance}
  */
 function createServer(sources) {
+  // Mutable reference to live sources — updated by add/remove API calls so that
+  // /file and /render always reflect current state without a server restart.
+  let activeSources = sources;
+
   const fastify = Fastify({ logger: false });
 
   // Register @fastify/static BEFORE routes (per research pitfall 7)
@@ -52,6 +59,88 @@ function createServer(sources) {
     reply.header('Cache-Control', 'no-store');
   });
 
+  // GET /api/sources — list all registered sources (fresh from config each time)
+  fastify.get('/api/sources', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const sources = await listSources();
+    return reply.send({ sources });
+  });
+
+  // POST /api/sources — add a new source
+  fastify.post('/api/sources', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const body = request.body || {};
+    const targetPath = body.path;
+    const name = body.name;
+
+    if (!targetPath) {
+      return reply.code(400).send({ error: 'Missing required field: path' });
+    }
+
+    const result = await addSource(targetPath, name ? { name } : {});
+
+    if (result.ok) {
+      // Refresh activeSources from config so new source is served immediately
+      const enriched = await listSources();
+      activeSources = enriched.filter(s => s.available);
+      return reply.code(201).send({ source: result.source });
+    }
+
+    if (result.reason === 'duplicate') {
+      return reply.code(409).send({ error: result.message || 'Source path already registered' });
+    }
+
+    return reply.code(400).send({ error: result.message || 'Failed to add source' });
+  });
+
+  // DELETE /api/sources/:identifier — remove a source by name or path
+  fastify.delete('/api/sources/:identifier', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const identifier = request.params.identifier;
+    const result = await removeSource(identifier);
+
+    if (result.ok) {
+      // Refresh activeSources from config so removed source stops being served
+      const enriched = await listSources();
+      activeSources = enriched.filter(s => s.available);
+      return reply.code(200).send({ removed: result.removed });
+    }
+
+    if (result.reason === 'not-found') {
+      return reply.code(404).send({ error: result.message || `Source not found: ${identifier}` });
+    }
+
+    if (result.reason === 'ambiguous') {
+      return reply.code(409).send({ error: result.message || 'Ambiguous identifier', matches: result.matches });
+    }
+
+    return reply.code(400).send({ error: result.message || 'Failed to remove source' });
+  });
+
+  // GET /sources — serve the management page (explicit route shadows static for this path)
+  fastify.get('/sources', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const htmlPath = path.join(__dirname, '..', 'public', 'sources.html');
+    const html = await fs.readFile(htmlPath, 'utf8');
+    return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
+  });
+
   // GET /file — serve a file or directory listing
   fastify.get('/file', async (request, reply) => {
     const requestedPath = request.query.path;
@@ -63,14 +152,14 @@ function createServer(sources) {
       });
     }
 
-    const matchedSource = await findSourceForPath(requestedPath, sources);
+    const matchedSource = await findSourceForPath(requestedPath, activeSources);
 
     if (!matchedSource) {
       return reply.code(403).send({
         error: 'Access denied: path is outside the registered root',
         status: 403,
         requested: requestedPath,
-        allowed: sources.map(s => s.path)
+        allowed: activeSources.map(s => s.path)
       });
     }
 
@@ -133,7 +222,7 @@ function createServer(sources) {
 
     // Step 1: Compute which sources the path is geometrically within (no existence check)
     const allowedSources = [];
-    for (const source of sources) {
+    for (const source of activeSources) {
       let realBase;
       try {
         realBase = await fs.realpath(path.resolve(source.path));
@@ -152,7 +241,7 @@ function createServer(sources) {
         error: 'Access denied: path is outside the registered root',
         status: 403,
         requested: requestedPath,
-        allowed: sources.map(s => s.path)
+        allowed: activeSources.map(s => s.path)
       });
     }
 
@@ -179,7 +268,7 @@ function createServer(sources) {
   // GET / — render README.md if present in any source, otherwise directory listing of first source
   fastify.get('/', async (request, reply) => {
     // Try to render README.md — check sources in order
-    for (const source of sources) {
+    for (const source of activeSources) {
       const readmeContent = await readFileIfAllowed('README.md', source.path);
       if (readmeContent !== null) {
         const bodyHtml = await renderMarkdown(readmeContent);
@@ -189,7 +278,7 @@ function createServer(sources) {
     }
 
     // Fallback: directory listing of first source
-    const firstSource = sources[0];
+    const firstSource = activeSources[0];
     const entries = await fs.readdir(firstSource.path);
     const annotated = [];
     for (const entry of entries) {

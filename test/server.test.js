@@ -431,3 +431,137 @@ test('Multi-source: start() skips unavailable sources and serves available ones'
   await fastify.close();
   await fs.rm(dirA, { recursive: true, force: true });
 });
+
+// ============================================================
+// Phase 3 Plan 03: Source management REST API and /sources page
+// ============================================================
+
+// Helper: create an isolated config directory for API tests
+async function withTempConfig(fn) {
+  const tmpConfigDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-config-'));
+  const origXdg = process.env.XDG_CONFIG_HOME;
+  process.env.XDG_CONFIG_HOME = tmpConfigDir;
+  try {
+    return await fn(tmpConfigDir);
+  } finally {
+    process.env.XDG_CONFIG_HOME = origXdg === undefined ? undefined : origXdg;
+    if (origXdg === undefined) delete process.env.XDG_CONFIG_HOME;
+    await fs.rm(tmpConfigDir, { recursive: true, force: true });
+  }
+}
+
+test('SRC-06: GET /api/sources returns 200 with sources array', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeSources(testDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/sources' });
+    assert.equal(response.statusCode, 200);
+    const body = JSON.parse(response.body);
+    assert.ok(Array.isArray(body.sources), 'body.sources should be an array');
+    await fastify.close();
+  });
+});
+
+test('SRC-06: POST /api/sources adds a source and returns 201', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeSources(testDir));
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/sources',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: testDir })
+    });
+    assert.equal(response.statusCode, 201);
+    const body = JSON.parse(response.body);
+    assert.ok(body.source, 'response should include source object');
+    assert.equal(body.source.path, testDir);
+    await fastify.close();
+  });
+});
+
+test('SRC-06: POST /api/sources with duplicate returns 409', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeSources(testDir));
+    // Add once
+    await fastify.inject({
+      method: 'POST',
+      url: '/api/sources',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: testDir })
+    });
+    // Add again — should conflict
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/api/sources',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: testDir })
+    });
+    assert.equal(response.statusCode, 409);
+    const body = JSON.parse(response.body);
+    assert.ok(body.error, 'response should include error message');
+    await fastify.close();
+  });
+});
+
+test('SRC-06: DELETE /api/sources/:name removes and returns 200', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeSources(testDir));
+    // Add first so we have something to remove
+    const addRes = await fastify.inject({
+      method: 'POST',
+      url: '/api/sources',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: testDir, name: 'to-remove' })
+    });
+    assert.equal(addRes.statusCode, 201);
+
+    const delRes = await fastify.inject({
+      method: 'DELETE',
+      url: '/api/sources/to-remove'
+    });
+    assert.equal(delRes.statusCode, 200);
+    const body = JSON.parse(delRes.body);
+    assert.ok(body.removed, 'response should include removed source');
+    await fastify.close();
+  });
+});
+
+test('SRC-06: DELETE /api/sources/unknown returns 404', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeSources(testDir));
+    const response = await fastify.inject({
+      method: 'DELETE',
+      url: '/api/sources/no-such-source-name'
+    });
+    assert.equal(response.statusCode, 404);
+    const body = JSON.parse(response.body);
+    assert.ok(body.error, 'response should include error message');
+    await fastify.close();
+  });
+});
+
+test('SRC-06: GET /sources returns 200 with text/html content-type', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/sources' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.headers['content-type'].includes('text/html'), `expected text/html, got ${response.headers['content-type']}`);
+  await fastify.close();
+});
+
+test("SRC-06: GET /sources has relaxed CSP (script-src 'self')", async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/sources' });
+  const csp = response.headers['content-security-policy'];
+  assert.ok(csp, 'Content-Security-Policy header should be present');
+  assert.ok(csp.includes("script-src 'self'"), `CSP should contain script-src 'self', got: ${csp}`);
+  assert.ok(!csp.includes("script-src 'none'"), `CSP should NOT contain script-src 'none', got: ${csp}`);
+  await fastify.close();
+});
+
+test("SRC-06: GET /render still has strict CSP (script-src 'none')", async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  const csp = response.headers['content-security-policy'];
+  assert.ok(csp, 'Content-Security-Policy header should be present');
+  assert.ok(csp.includes("script-src 'none'"), `CSP should contain script-src 'none', got: ${csp}`);
+  await fastify.close();
+});

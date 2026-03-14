@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gsd-browser - Sources</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #21262d;
+      padding-bottom: 12px;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 12px;
+    }
+
+    section {
+      margin-bottom: 32px;
+    }
+
+    /* Add source form */
+    .add-form {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 12px;
+      color: #8b949e;
+      font-weight: 500;
+    }
+
+    input[type="text"] {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 13px;
+      padding: 6px 10px;
+      outline: none;
+      min-width: 260px;
+    }
+
+    input[type="text"]:focus {
+      border-color: #58a6ff;
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+    }
+
+    input[type="text"]::placeholder {
+      color: #484f58;
+    }
+
+    button {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 14px;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: #30363d;
+      border-color: #8b949e;
+    }
+
+    button.primary {
+      background: #238636;
+      border-color: #2ea043;
+      color: #ffffff;
+    }
+
+    button.primary:hover {
+      background: #2ea043;
+    }
+
+    button.danger {
+      background: transparent;
+      border-color: #f85149;
+      color: #f85149;
+      font-size: 12px;
+      padding: 4px 10px;
+    }
+
+    button.danger:hover {
+      background: rgba(248, 81, 73, 0.1);
+    }
+
+    /* Sources table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #161b22;
+      border-bottom: 1px solid #21262d;
+      color: #8b949e;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 8px 12px;
+      text-align: left;
+      text-transform: uppercase;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #21262d;
+    }
+
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: #161b22;
+    }
+
+    td {
+      padding: 10px 12px;
+      vertical-align: middle;
+    }
+
+    .source-name {
+      color: #f0f6fc;
+      font-weight: 500;
+    }
+
+    .source-path {
+      color: #8b949e;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 12px;
+    }
+
+    .badge {
+      border-radius: 12px;
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+    }
+
+    .badge-available {
+      background: rgba(46, 160, 67, 0.15);
+      border: 1px solid rgba(46, 160, 67, 0.4);
+      color: #3fb950;
+    }
+
+    .badge-unavailable {
+      background: rgba(248, 81, 73, 0.1);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      color: #f85149;
+    }
+
+    .conventions-list {
+      color: #58a6ff;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 11px;
+    }
+
+    .empty-state {
+      color: #484f58;
+      font-style: italic;
+      padding: 24px 0;
+      text-align: center;
+    }
+
+    /* Status messages */
+    .status {
+      border-radius: 6px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      padding: 10px 14px;
+    }
+
+    .status-success {
+      background: rgba(46, 160, 67, 0.1);
+      border: 1px solid rgba(46, 160, 67, 0.3);
+      color: #3fb950;
+    }
+
+    .status-error {
+      background: rgba(248, 81, 73, 0.1);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      color: #f85149;
+    }
+
+    .status-hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>gsd-browser - Sources</h1>
+
+  <section>
+    <h2>Add Source</h2>
+    <div class="add-form">
+      <div class="field">
+        <label for="path-input">Path</label>
+        <input type="text" id="path-input" placeholder="/path/to/directory">
+      </div>
+      <div class="field">
+        <label for="name-input">Name (optional)</label>
+        <input type="text" id="name-input" placeholder="auto-detected">
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="primary" id="add-btn">Add Source</button>
+      </div>
+    </div>
+    <div id="status-msg" class="status status-hidden"></div>
+  </section>
+
+  <section>
+    <h2>Registered Sources</h2>
+    <div id="sources-container">
+      <p class="empty-state">Loading...</p>
+    </div>
+  </section>
+
+  <script>
+    const pathInput = document.getElementById('path-input');
+    const nameInput = document.getElementById('name-input');
+    const addBtn = document.getElementById('add-btn');
+    const statusMsg = document.getElementById('status-msg');
+    const sourcesContainer = document.getElementById('sources-container');
+
+    function showStatus(message, isError) {
+      statusMsg.textContent = message;
+      statusMsg.className = 'status ' + (isError ? 'status-error' : 'status-success');
+      clearTimeout(showStatus._timer);
+      showStatus._timer = setTimeout(() => {
+        statusMsg.className = 'status status-hidden';
+      }, 5000);
+    }
+
+    async function loadSources() {
+      try {
+        const res = await fetch('/api/sources');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        renderSources(data.sources || []);
+      } catch (err) {
+        sourcesContainer.innerHTML = '<p class="empty-state">Failed to load sources: ' + err.message + '</p>';
+      }
+    }
+
+    function renderSources(sources) {
+      if (sources.length === 0) {
+        sourcesContainer.innerHTML = '<p class="empty-state">No sources registered. Add a directory above to get started.</p>';
+        return;
+      }
+
+      const rows = sources.map(src => {
+        const statusBadge = src.available
+          ? '<span class="badge badge-available">available</span>'
+          : '<span class="badge badge-unavailable">unavailable</span>';
+
+        const conventions = src.conventions && src.conventions.length > 0
+          ? '<span class="conventions-list">' + src.conventions.join(', ') + '</span>'
+          : '<span style="color:#484f58">—</span>';
+
+        const safeName = escapeHtml(src.name);
+        const safePath = escapeHtml(src.path);
+
+        return `<tr>
+          <td><span class="source-name">${safeName}</span></td>
+          <td><span class="source-path">${safePath}</span></td>
+          <td>${statusBadge}</td>
+          <td>${conventions}</td>
+          <td><button class="danger" data-name="${safeName}">Remove</button></td>
+        </tr>`;
+      }).join('');
+
+      sourcesContainer.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Path</th>
+              <th>Status</th>
+              <th>Conventions</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+
+      sourcesContainer.querySelectorAll('button.danger').forEach(btn => {
+        btn.addEventListener('click', () => removeSource(btn.dataset.name));
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function addSource() {
+      const targetPath = pathInput.value.trim();
+      if (!targetPath) {
+        showStatus('Please enter a path.', true);
+        return;
+      }
+
+      addBtn.disabled = true;
+      addBtn.textContent = 'Adding...';
+
+      try {
+        const body = { path: targetPath };
+        const name = nameInput.value.trim();
+        if (name) body.name = name;
+
+        const res = await fetch('/api/sources', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (res.status === 201) {
+          showStatus('Added: ' + (data.source ? data.source.name : targetPath), false);
+          pathInput.value = '';
+          nameInput.value = '';
+          await loadSources();
+        } else {
+          showStatus(data.error || 'Failed to add source (HTTP ' + res.status + ')', true);
+        }
+      } catch (err) {
+        showStatus('Network error: ' + err.message, true);
+      } finally {
+        addBtn.disabled = false;
+        addBtn.textContent = 'Add Source';
+      }
+    }
+
+    async function removeSource(name) {
+      try {
+        const res = await fetch('/api/sources/' + encodeURIComponent(name), {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showStatus('Removed: ' + name, false);
+          await loadSources();
+        } else {
+          showStatus(data.error || 'Failed to remove source (HTTP ' + res.status + ')', true);
+        }
+      } catch (err) {
+        showStatus('Network error: ' + err.message, true);
+      }
+    }
+
+    addBtn.addEventListener('click', addSource);
+
+    pathInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') addSource();
+    });
+
+    loadSources();
+  </script>
+</body>
+</html>

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-stopped_at: Phase 3 Plan 01 complete
-last_updated: "2026-03-14T03:11:12Z"
+status: completed
+stopped_at: Completed 03-source-registration-02-PLAN.md
+last_updated: "2026-03-14T03:18:15.569Z"
 last_activity: 2026-03-14 — Phase 03 Plan 01 complete; source registry module TDD
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
   percent: 40
 ---
 
@@ -55,6 +55,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02-rendering P01 | 2min | 2 tasks | 4 files |
 | Phase 02-rendering P02 | 5min | 2 tasks | 2 files |
 | Phase 03-source-registration P01 | 2min | 1 task (TDD) | 2 files |
+| Phase 03-source-registration P02 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,7 @@ Recent decisions affecting current work:
 - [Phase 03-source-registration P01]: Atomic write uses .tmp in same directory as config (not os.tmpdir()) to avoid cross-device EXDEV rename errors
 - [Phase 03-source-registration P01]: Optional configPath last-arg pattern for test isolation without env var pollution
 - [Phase 03-source-registration P01]: Auto-suffix duplicate names (-2, -3) over interactive prompt — pipe-safe design
+- [Phase 03-source-registration]: Two-pass /render logic: geometric containment for 403, read-attempt loop for 404 — prevents relative paths always matching first source
 
 ### Pending Todos
 
@@ -100,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T03:11:12Z
-Stopped at: Phase 3 Plan 01 complete — src/sources.js implemented and tested
-Resume file: .planning/phases/03-source-registration/03-01-SUMMARY.md
+Last session: 2026-03-14T03:18:15.567Z
+Stopped at: Completed 03-source-registration-02-PLAN.md
+Resume file: None

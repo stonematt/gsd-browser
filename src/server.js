@@ -6,18 +6,36 @@ const Fastify = require('fastify');
 const mime = require('mime-types');
 const { isPathAllowed, readFileIfAllowed } = require('./filesystem.js');
 const { initRenderer, renderMarkdown, buildPage } = require('./renderer.js');
+const { enrichSourcesWithConventions } = require('./sources.js');
 
 // CSP header value — defined as a named constant for easy Phase 4 update
 // Phase 4: change script-src 'none' to script-src 'self' when adding frontend JS
 const CSP_HEADER = "default-src 'self'; script-src 'none'; object-src 'none'";
 
 /**
- * Create a Fastify server instance with security hooks and file serving route.
+ * Find which source contains the requested path (for path traversal check and routing).
+ * Iterates sources in order; returns the first matching source or null.
  *
- * @param {string} registeredRoot - The root directory to serve files from
+ * @param {string} requestedPath
+ * @param {Array<{ name: string, path: string, available: boolean, conventions: string[] }>} sources
+ * @returns {Promise<object|null>}
+ */
+async function findSourceForPath(requestedPath, sources) {
+  for (const source of sources) {
+    const allowed = await isPathAllowed(requestedPath, source.path);
+    if (allowed) return source;
+  }
+  return null;
+}
+
+/**
+ * Create a Fastify server instance with security hooks and file serving routes.
+ *
+ * @param {Array<{ name: string, path: string, available: boolean, conventions: string[] }>} sources
+ *   Array of available source objects (only available sources should be passed)
  * @returns {import('fastify').FastifyInstance}
  */
-function createServer(registeredRoot) {
+function createServer(sources) {
   const fastify = Fastify({ logger: false });
 
   // Register @fastify/static BEFORE routes (per research pitfall 7)
@@ -45,19 +63,19 @@ function createServer(registeredRoot) {
       });
     }
 
-    const allowed = await isPathAllowed(requestedPath, registeredRoot);
+    const matchedSource = await findSourceForPath(requestedPath, sources);
 
-    if (!allowed) {
+    if (!matchedSource) {
       return reply.code(403).send({
         error: 'Access denied: path is outside the registered root',
         status: 403,
         requested: requestedPath,
-        allowed: [registeredRoot]
+        allowed: sources.map(s => s.path)
       });
     }
 
     // Path is allowed — resolve it to check if it's a file or directory
-    const resolvedPath = path.resolve(registeredRoot, requestedPath);
+    const resolvedPath = path.resolve(matchedSource.path, requestedPath);
 
     let stat;
     try {
@@ -106,29 +124,44 @@ function createServer(registeredRoot) {
     }
 
     // Distinguish path traversal (403) from missing file (404).
-    // Strategy: normalize the path WITHOUT requiring it to exist (path.resolve is sync),
-    // then compare against realpath of the root (which exists and may differ due to symlinks).
-    // If outside → 403 immediately.
-    // If inside but file missing → readFileIfAllowed returns null → 404.
-    let realBase;
-    try {
-      realBase = await fs.realpath(path.resolve(registeredRoot));
-    } catch {
-      realBase = path.resolve(registeredRoot);
-    }
-    const resolvedPath = path.resolve(realBase, requestedPath);
-    const isWithinRoot = resolvedPath === realBase || resolvedPath.startsWith(realBase + path.sep);
+    // Strategy:
+    //   1. Check that the path, if it existed, would be within at least ONE source root.
+    //      If it's outside ALL roots → 403 (traversal).
+    //   2. Among the allowed roots, try to read the file from each.
+    //      First source that returns content wins.
+    //      If none have the file → 404.
 
-    if (!isWithinRoot) {
+    // Step 1: Compute which sources the path is geometrically within (no existence check)
+    const allowedSources = [];
+    for (const source of sources) {
+      let realBase;
+      try {
+        realBase = await fs.realpath(path.resolve(source.path));
+      } catch {
+        realBase = path.resolve(source.path);
+      }
+      const resolvedPath = path.resolve(realBase, requestedPath);
+      const isWithinRoot = resolvedPath === realBase || resolvedPath.startsWith(realBase + path.sep);
+      if (isWithinRoot) {
+        allowedSources.push(source);
+      }
+    }
+
+    if (allowedSources.length === 0) {
       return reply.code(403).send({
         error: 'Access denied: path is outside the registered root',
         status: 403,
         requested: requestedPath,
-        allowed: [registeredRoot]
+        allowed: sources.map(s => s.path)
       });
     }
 
-    const content = await readFileIfAllowed(requestedPath, registeredRoot);
+    // Step 2: Find the first source where the file actually exists
+    let content = null;
+    for (const source of allowedSources) {
+      content = await readFileIfAllowed(requestedPath, source.path);
+      if (content !== null) break;
+    }
 
     if (content === null) {
       return reply.code(404).send({
@@ -143,21 +176,24 @@ function createServer(registeredRoot) {
     return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
   });
 
-  // GET / — render README.md if present, otherwise directory listing
+  // GET / — render README.md if present in any source, otherwise directory listing of first source
   fastify.get('/', async (request, reply) => {
-    // Try to render README.md from root
-    const readmeContent = await readFileIfAllowed('README.md', registeredRoot);
-    if (readmeContent !== null) {
-      const bodyHtml = await renderMarkdown(readmeContent);
-      const html = buildPage({ filePath: 'README.md', bodyHtml });
-      return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
+    // Try to render README.md — check sources in order
+    for (const source of sources) {
+      const readmeContent = await readFileIfAllowed('README.md', source.path);
+      if (readmeContent !== null) {
+        const bodyHtml = await renderMarkdown(readmeContent);
+        const html = buildPage({ filePath: 'README.md', bodyHtml });
+        return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
+      }
     }
 
-    // Fallback: directory listing (same format as /file?path=.)
-    const entries = await fs.readdir(registeredRoot);
+    // Fallback: directory listing of first source
+    const firstSource = sources[0];
+    const entries = await fs.readdir(firstSource.path);
     const annotated = [];
     for (const entry of entries) {
-      const entryStat = await fs.stat(path.join(registeredRoot, entry));
+      const entryStat = await fs.stat(path.join(firstSource.path, entry));
       annotated.push(entryStat.isDirectory() ? entry + '/' : entry);
     }
     return reply.send({ type: 'directory', path: '.', entries: annotated });
@@ -170,13 +206,18 @@ function createServer(registeredRoot) {
  * Start the server, bind to 127.0.0.1, print startup message.
  *
  * @param {number} port - Port number (0 = OS assigns random port)
- * @param {string} registeredRoot - Root directory to serve
+ * @param {Array<{ name: string, path: string, available?: boolean, conventions?: string[] }>} sources
+ *   Source array (will be enriched with conventions at startup)
  * @param {object} [options] - Options
  * @param {boolean} [options.open] - Open browser after start
  * @returns {Promise<import('fastify').FastifyInstance>}
  */
-async function start(port, registeredRoot, options = {}) {
-  const fastify = createServer(registeredRoot);
+async function start(port, sources, options = {}) {
+  // Re-scan conventions at startup (fresh-from-disk philosophy)
+  const enriched = await enrichSourcesWithConventions(sources);
+  const availableSources = enriched.filter(s => s.available);
+
+  const fastify = createServer(availableSources);
 
   // Initialize Shiki + Mermaid before accepting requests
   await initRenderer();
@@ -184,14 +225,22 @@ async function start(port, registeredRoot, options = {}) {
   await fastify.listen({ port, host: '127.0.0.1' });
 
   const actualPort = fastify.server.address().port;
-  process.stdout.write(`gsd-browser serving ${registeredRoot} at http://127.0.0.1:${actualPort}\n`);
+
+  if (availableSources.length === 1) {
+    process.stdout.write(`gsd-browser serving ${availableSources[0].path} at http://127.0.0.1:${actualPort}\n`);
+  } else {
+    process.stdout.write(`gsd-browser serving ${availableSources.length} sources at http://127.0.0.1:${actualPort}\n`);
+    for (const src of availableSources) {
+      process.stdout.write(`  ${src.name}: ${src.path}\n`);
+    }
+  }
 
   if (options.open) {
     try {
       const open = await import('open');
       await open.default(`http://127.0.0.1:${actualPort}`);
     } catch (err) {
-      // open package may not be installed in Phase 1 — that's fine
+      // open package may not be installed — that's fine
     }
   }
 

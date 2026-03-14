@@ -12,6 +12,11 @@ const { initRenderer } = require('../src/renderer.js');
 
 let testDir;
 
+// Helper: wrap a single testDir as the sources array format expected by createServer
+function makeSources(dir) {
+  return [{ name: 'test', path: dir, available: true, conventions: [] }];
+}
+
 before(async () => {
   testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-server-test-'));
   await fs.writeFile(path.join(testDir, 'valid.txt'), 'hello');
@@ -45,7 +50,7 @@ after(async () => {
 
 // SERV-04: Cache-Control header
 test('SERV-04: GET /file returns Cache-Control: no-store header', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({
     method: 'GET',
     url: '/file',
@@ -57,18 +62,18 @@ test('SERV-04: GET /file returns Cache-Control: no-store header', async () => {
 
 // SERV-05: Port configuration
 test('SERV-05: server starts on port 0 (random) and reports port > 0', async () => {
-  const fastify = await start(0, testDir);
+  const fastify = await start(0, makeSources(testDir));
   const addr = fastify.server.address();
   assert.ok(addr.port > 0, `expected port > 0, got ${addr.port}`);
   await fastify.close();
 });
 
 test('SERV-05: EADDRINUSE error when port is already occupied', async () => {
-  const first = await start(0, testDir);
+  const first = await start(0, makeSources(testDir));
   const occupiedPort = first.server.address().port;
   try {
     await assert.rejects(
-      async () => start(occupiedPort, testDir),
+      async () => start(occupiedPort, makeSources(testDir)),
       (err) => {
         assert.equal(err.code, 'EADDRINUSE');
         return true;
@@ -81,7 +86,7 @@ test('SERV-05: EADDRINUSE error when port is already occupied', async () => {
 
 // SERV-06: Localhost binding
 test('SERV-06: server binds to 127.0.0.1 (not 0.0.0.0)', async () => {
-  const fastify = await start(0, testDir);
+  const fastify = await start(0, makeSources(testDir));
   const addr = fastify.server.address();
   assert.equal(addr.address, '127.0.0.1');
   await fastify.close();
@@ -89,7 +94,7 @@ test('SERV-06: server binds to 127.0.0.1 (not 0.0.0.0)', async () => {
 
 // SERV-07: Path traversal protection
 test('SERV-07: GET /file?path=../../../etc/passwd returns 403', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({
     method: 'GET',
     url: '/file',
@@ -103,7 +108,7 @@ test('SERV-07: GET /file?path=../../../etc/passwd returns 403', async () => {
 });
 
 test('SERV-07: GET /file?path=valid.txt returns 200 with file content', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({
     method: 'GET',
     url: '/file',
@@ -115,7 +120,7 @@ test('SERV-07: GET /file?path=valid.txt returns 200 with file content', async ()
 });
 
 test('SERV-07: GET /file without path param returns 400', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({
     method: 'GET',
     url: '/file'
@@ -126,7 +131,7 @@ test('SERV-07: GET /file without path param returns 400', async () => {
 
 // SERV-08: Content-Security-Policy header
 test("SERV-08: GET /file response has CSP header containing script-src 'none'", async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({
     method: 'GET',
     url: '/file',
@@ -140,7 +145,7 @@ test("SERV-08: GET /file response has CSP header containing script-src 'none'", 
 
 // Error format test
 test('Error format: 403 response body has all 4 locked fields', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({
     method: 'GET',
     url: '/file',
@@ -159,7 +164,7 @@ test('Error format: 403 response body has all 4 locked fields', async () => {
 
 // Directory listing test
 test('Directory listing: GET /file?path=. returns JSON with type directory and entries', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({
     method: 'GET',
     url: '/file',
@@ -191,11 +196,13 @@ test('CLI: --version flag prints gsd-browser v with version number', () => {
   assert.match(result, /gsd-browser v\d/);
 });
 
-test('CLI: no args exits with code 1', () => {
+test('CLI: no args and no registered sources exits with code 1', () => {
+  // Run with XDG_CONFIG_HOME pointing to a temp empty dir so no real config is loaded
+  const tmpConfig = require('node:os').tmpdir();
   try {
     execSync(
       `node ${path.join(__dirname, '..', 'bin', 'gsd-browser.cjs')}`,
-      { encoding: 'utf8' }
+      { encoding: 'utf8', env: { ...process.env, XDG_CONFIG_HOME: tmpConfig } }
     );
     assert.fail('Expected non-zero exit code');
   } catch (err) {
@@ -209,7 +216,7 @@ test('CLI: no args exits with code 1', () => {
 
 // SERV-02: /render route
 test('SERV-02: GET /render?path=test.md returns 200 with HTML content-type', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
   assert.equal(response.statusCode, 200);
   assert.ok(response.headers['content-type'].includes('text/html'), `expected text/html, got ${response.headers['content-type']}`);
@@ -217,21 +224,21 @@ test('SERV-02: GET /render?path=test.md returns 200 with HTML content-type', asy
 });
 
 test('SERV-02: GET /render response contains <!DOCTYPE html>', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
   assert.ok(response.body.includes('<!DOCTYPE html>'), 'response body should contain <!DOCTYPE html>');
   await fastify.close();
 });
 
 test('REND-02: GET /render response contains .markdown-body', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
   assert.ok(response.body.includes('markdown-body'), 'response body should contain markdown-body class');
   await fastify.close();
 });
 
 test('REND-02: GET /render response contains breadcrumb with file path', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
   assert.ok(response.body.includes('breadcrumb'), 'response body should contain breadcrumb element');
   assert.ok(response.body.includes('test.md'), 'response body should contain the file path');
@@ -239,35 +246,35 @@ test('REND-02: GET /render response contains breadcrumb with file path', async (
 });
 
 test('REND-02: GET /render response links to /styles/markdown.css', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
   assert.ok(response.body.includes('/styles/markdown.css'), 'response body should link to /styles/markdown.css');
   await fastify.close();
 });
 
 test('SERV-02: GET /render?path=../evil returns 403', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=../evil' });
   assert.equal(response.statusCode, 403);
   await fastify.close();
 });
 
 test('SERV-02: GET /render without path param returns 400', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render' });
   assert.equal(response.statusCode, 400);
   await fastify.close();
 });
 
 test('SERV-02: GET /render?path=nonexistent.md returns 404', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=nonexistent.md' });
   assert.equal(response.statusCode, 404);
   await fastify.close();
 });
 
 test('SERV-08: GET /render has CSP header', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
   const csp = response.headers['content-security-policy'];
   assert.ok(csp, 'Content-Security-Policy header should be present');
@@ -275,14 +282,14 @@ test('SERV-08: GET /render has CSP header', async () => {
 });
 
 test('SERV-04: GET /render has Cache-Control: no-store', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
   assert.equal(response.headers['cache-control'], 'no-store');
   await fastify.close();
 });
 
 test('REND-02: GET /styles/markdown.css returns 200 text/css', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/styles/markdown.css' });
   assert.equal(response.statusCode, 200);
   assert.ok(response.headers['content-type'].includes('text/css'), `expected text/css, got ${response.headers['content-type']}`);
@@ -290,7 +297,7 @@ test('REND-02: GET /styles/markdown.css returns 200 text/css', async () => {
 });
 
 test('SERV-02: GET / with README.md present returns 200 with rendered HTML', async () => {
-  const fastify = createServer(testDir);
+  const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/' });
   assert.equal(response.statusCode, 200);
   assert.ok(response.headers['content-type'].includes('text/html'), `expected text/html, got ${response.headers['content-type']}`);
@@ -301,11 +308,126 @@ test('SERV-02: GET / with README.md present returns 200 with rendered HTML', asy
 test('GET / without README.md falls back to directory listing', async () => {
   const noReadmeDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-noreadme-'));
   await fs.writeFile(path.join(noReadmeDir, 'file.txt'), 'content');
-  const fastify = createServer(noReadmeDir);
+  const fastify = createServer(makeSources(noReadmeDir));
   const response = await fastify.inject({ method: 'GET', url: '/' });
   // Should be JSON directory listing
   const body = JSON.parse(response.body);
   assert.equal(body.type, 'directory');
   await fastify.close();
   await fs.rm(noReadmeDir, { recursive: true, force: true });
+});
+
+// ============================================================
+// Phase 3 Plan 02: Multi-source tests
+// ============================================================
+
+test('Multi-source: file from source A is accessible when A is registered', async () => {
+  const dirA = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcA-'));
+  await fs.writeFile(path.join(dirA, 'from-a.txt'), 'source A content');
+
+  const sources = [
+    { name: 'sourceA', path: dirA, available: true, conventions: [] }
+  ];
+  const fastify = createServer(sources);
+  const response = await fastify.inject({
+    method: 'GET',
+    url: '/file',
+    query: { path: 'from-a.txt' }
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body, 'source A content');
+  await fastify.close();
+  await fs.rm(dirA, { recursive: true, force: true });
+});
+
+test('Multi-source: path outside ALL sources returns 403 with all source paths in allowed', async () => {
+  const dirA = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcA-'));
+  const dirB = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcB-'));
+
+  const sources = [
+    { name: 'sourceA', path: dirA, available: true, conventions: [] },
+    { name: 'sourceB', path: dirB, available: true, conventions: [] },
+  ];
+  const fastify = createServer(sources);
+  const response = await fastify.inject({
+    method: 'GET',
+    url: '/file',
+    query: { path: '../../../etc/passwd' }
+  });
+  assert.equal(response.statusCode, 403);
+  const body = JSON.parse(response.body);
+  assert.ok(Array.isArray(body.allowed), 'allowed should be an array');
+  assert.equal(body.allowed.length, 2, 'allowed should list both source paths');
+  await fastify.close();
+  await fs.rm(dirA, { recursive: true, force: true });
+  await fs.rm(dirB, { recursive: true, force: true });
+});
+
+test('Multi-source: files from two different sources are both accessible', async () => {
+  const dirA = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcA-'));
+  const dirB = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcB-'));
+  await fs.writeFile(path.join(dirA, 'file-a.txt'), 'from A');
+  await fs.writeFile(path.join(dirB, 'file-b.txt'), 'from B');
+
+  const sources = [
+    { name: 'sourceA', path: dirA, available: true, conventions: [] },
+    { name: 'sourceB', path: dirB, available: true, conventions: [] },
+  ];
+  const fastify = createServer(sources);
+
+  const responseA = await fastify.inject({
+    method: 'GET', url: '/file', query: { path: 'file-a.txt' }
+  });
+  assert.equal(responseA.statusCode, 200);
+  assert.equal(responseA.body, 'from A');
+
+  const responseB = await fastify.inject({
+    method: 'GET', url: '/file', query: { path: 'file-b.txt' }
+  });
+  assert.equal(responseB.statusCode, 200);
+  assert.equal(responseB.body, 'from B');
+
+  await fastify.close();
+  await fs.rm(dirA, { recursive: true, force: true });
+  await fs.rm(dirB, { recursive: true, force: true });
+});
+
+test('Multi-source: /render works across sources (finds correct source for file)', async () => {
+  const dirA = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcA-'));
+  const dirB = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcB-'));
+  await fs.writeFile(path.join(dirB, 'doc.md'), '# From Source B\n\nContent here.\n');
+
+  const sources = [
+    { name: 'sourceA', path: dirA, available: true, conventions: [] },
+    { name: 'sourceB', path: dirB, available: true, conventions: [] },
+  ];
+  const fastify = createServer(sources);
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=doc.md' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('From Source B'), 'rendered content should include heading from source B');
+  await fastify.close();
+  await fs.rm(dirA, { recursive: true, force: true });
+  await fs.rm(dirB, { recursive: true, force: true });
+});
+
+test('Multi-source: start() skips unavailable sources and serves available ones', async () => {
+  const dirA = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-srcA-'));
+  await fs.writeFile(path.join(dirA, 'alive.txt'), 'alive');
+
+  const sources = [
+    { name: 'sourceA', path: dirA, available: true, conventions: [] },
+    { name: 'missing', path: '/nonexistent/path/that/does/not/exist', available: false, conventions: [] },
+  ];
+
+  // start() enriches sources and filters to available-only
+  const fastify = await start(0, sources);
+
+  // File from the available source should be accessible
+  const response = await fastify.inject({
+    method: 'GET', url: '/file', query: { path: 'alive.txt' }
+  });
+  assert.equal(response.statusCode, 200);
+
+  await fastify.close();
+  await fs.rm(dirA, { recursive: true, force: true });
 });

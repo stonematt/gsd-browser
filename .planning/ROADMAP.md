@@ -62,7 +62,7 @@ Plans:
   3. `gsd-browser list` prints all registered sources with their resolved paths
   4. When a repo is registered, `.planning/`, `docs/`, and `README.md` are automatically discovered and browsable without extra configuration
   5. User can register and remove sources from the web UI without touching the CLI
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 03-01-PLAN.md — TDD source registry module (config persistence + convention discovery)
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-03-13 |
 | 2. Rendering | 2/2 | Complete   | 2026-03-13 |
-| 3. Source Registration | 0/3 | Planned | - |
+| 3. Source Registration | 1/3 | In Progress|  |
 | 4. Browser UI | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

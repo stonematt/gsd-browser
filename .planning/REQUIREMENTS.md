@@ -20,11 +20,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Source Management
 
-- [ ] **SRC-01**: User can register a repo/directory as a document source via `gsd-browser add <path>`
-- [ ] **SRC-02**: User can remove a registered source via `gsd-browser remove <path>`
-- [ ] **SRC-03**: User can list registered sources via `gsd-browser list`
-- [ ] **SRC-04**: Registered sources persist across server restarts (config file in OS-appropriate location)
-- [ ] **SRC-05**: Registered repos auto-discover `.planning/`, `docs/`, and `README.md` by convention
+- [x] **SRC-01**: User can register a repo/directory as a document source via `gsd-browser add <path>`
+- [x] **SRC-02**: User can remove a registered source via `gsd-browser remove <path>`
+- [x] **SRC-03**: User can list registered sources via `gsd-browser list`
+- [x] **SRC-04**: Registered sources persist across server restarts (config file in OS-appropriate location)
+- [x] **SRC-05**: Registered repos auto-discover `.planning/`, `docs/`, and `README.md` by convention
 - [ ] **SRC-06**: User can add/remove sources from the web UI (not just CLI)
 
 ### Navigation
@@ -99,11 +99,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SERV-06 | Phase 1 | Complete |
 | SERV-07 | Phase 1 | Complete |
 | SERV-08 | Phase 1 | Complete |
-| SRC-01 | Phase 3 | Pending |
-| SRC-02 | Phase 3 | Pending |
-| SRC-03 | Phase 3 | Pending |
-| SRC-04 | Phase 3 | Pending |
-| SRC-05 | Phase 3 | Pending |
+| SRC-01 | Phase 3 | Complete |
+| SRC-02 | Phase 3 | Complete |
+| SRC-03 | Phase 3 | Complete |
+| SRC-04 | Phase 3 | Complete |
+| SRC-05 | Phase 3 | Complete |
 | SRC-06 | Phase 3 | Pending |
 | NAV-01 | Phase 4 | Pending |
 | NAV-02 | Phase 4 | Pending |

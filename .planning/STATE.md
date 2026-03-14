@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-14T02:00:05.271Z"
-last_activity: 2026-03-13 — Phase 02 Plan 02 complete; visual verification approved
+status: in-progress
+stopped_at: Phase 3 Plan 01 complete
+last_updated: "2026-03-14T03:11:12Z"
+last_activity: 2026-03-14 — Phase 03 Plan 01 complete; source registry module TDD
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 33
+  total_plans: 5
+  completed_plans: 5
+  percent: 40
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Instantly browse and read the markdown artifacts that agents are actively writing, across multiple repos, without leaving the browser.
-**Current focus:** Phase 2 — Rendering
+**Current focus:** Phase 3 — Source Registration
 
 ## Current Position
 
-Phase: 2 of 6 (Rendering) — COMPLETE
-Plan: 2 of 2 in phase (all plans complete)
-Status: Phase 2 complete — ready for Phase 3 (Source Registration)
-Last activity: 2026-03-13 — Phase 02 Plan 02 complete; visual verification approved
+Phase: 3 of 6 (Source Registration) — IN PROGRESS
+Plan: 1 of 3 in phase complete
+Status: Phase 3 Plan 01 complete — source registry module (src/sources.js) fully tested
+Last activity: 2026-03-14 — Phase 03 Plan 01 complete; source registry module TDD
 
-Progress: [████░░░░░░] 33%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [████░░░░░░] 33%
 | Phase 01-foundation P02 | 4 | 2 tasks | 3 files |
 | Phase 02-rendering P01 | 2min | 2 tasks | 4 files |
 | Phase 02-rendering P02 | 5min | 2 tasks | 2 files |
+| Phase 03-source-registration P01 | 2min | 1 task (TDD) | 2 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,10 @@ Recent decisions affecting current work:
 - [Phase 02-rendering plan 02]: Register @fastify/static before route definitions to avoid Fastify prefix shadowing pitfall
 - [Phase 02-rendering plan 02]: decorateReply: false on @fastify/static prevents reply decoration conflict with reply.send()
 - [Phase 02-rendering plan 02]: Path traversal check uses path.resolve(realBase, requestedPath) without fs.realpath on target — enables 403 vs 404 for non-existent paths
+- [Phase 03-source-registration P01]: conf and env-paths are ESM-only — implemented XDG path logic directly in CJS
+- [Phase 03-source-registration P01]: Atomic write uses .tmp in same directory as config (not os.tmpdir()) to avoid cross-device EXDEV rename errors
+- [Phase 03-source-registration P01]: Optional configPath last-arg pattern for test isolation without env var pollution
+- [Phase 03-source-registration P01]: Auto-suffix duplicate names (-2, -3) over interactive prompt — pipe-safe design
 
 ### Pending Todos
 
@@ -95,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T02:00:05.268Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-source-registration/03-CONTEXT.md
+Last session: 2026-03-14T03:11:12Z
+Stopped at: Phase 3 Plan 01 complete — src/sources.js implemented and tested
+Resume file: .planning/phases/03-source-registration/03-01-SUMMARY.md

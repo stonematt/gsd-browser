@@ -2,7 +2,7 @@
 
 ## Overview
 
-gsd-browser is built in six phases ordered by dependency and security-first discipline. The foundation establishes a secure, localhost-only file server with path traversal protection before any UI work begins. Rendering and source registration are built as independent services, then wired together in the browser UI shell. Navigation polish and Mermaid rendering follow once core browsing works. Distribution (npx packaging and npm publication) closes the milestone with a validated zero-install experience.
+gsd-browser is built in seven phases ordered by dependency and security-first discipline. The foundation establishes a secure, localhost-only file server with path traversal protection before any UI work begins. Rendering and source registration are built as independent services, then wired together in the browser UI shell. A GSD project dashboard (Phase 4.5) surfaces multi-project, multi-branch progress by parsing GSD planning artifacts. Navigation polish and Mermaid rendering follow once core browsing works. Distribution (npx packaging and npm publication) closes the milestone with a validated zero-install experience.
 
 ## Phases
 
@@ -14,8 +14,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Foundation** - Secure localhost HTTP server with path safety and CSP headers (completed 2026-03-13)
 - [x] **Phase 2: Rendering** - GFM markdown rendering with syntax highlighting, fresh-from-disk on every request (completed 2026-03-13)
-- [ ] **Phase 3: Source Registration** - CLI source management with persistence and convention-based discovery
+- [x] **Phase 3: Source Registration** - CLI source management with persistence and convention-based discovery (completed 2026-03-20)
 - [ ] **Phase 4: Browser UI** - Vanilla JS frontend shell with file tree, repo switcher, and dark theme
+- [ ] **Phase 4.5: GSD Dashboard** - Multi-project progress dashboard with phase timeline, editorial context, and branch awareness (INSERTED)
 - [ ] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams
 - [ ] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX
 
@@ -62,12 +63,12 @@ Plans:
   3. `gsd-browser list` prints all registered sources with their resolved paths
   4. When a repo is registered, `.planning/`, `docs/`, and `README.md` are automatically discovered and browsable without extra configuration
   5. User can register and remove sources from the web UI without touching the CLI
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 03-01-PLAN.md — TDD source registry module (config persistence + convention discovery)
-- [ ] 03-02-PLAN.md — CLI subcommand wiring + server multi-source migration
-- [ ] 03-03-PLAN.md — REST API endpoints + web management page + visual verification
+- [x] 03-01-PLAN.md — TDD source registry module (config persistence + convention discovery)
+- [x] 03-02-PLAN.md — CLI subcommand wiring + server multi-source migration
+- [x] 03-03-PLAN.md — REST API endpoints + web management page + visual verification
 
 ### Phase 4: Browser UI
 **Goal**: Users can navigate between registered repos and browse their file trees in a working browser UI
@@ -78,6 +79,23 @@ Plans:
   2. The file tree sidebar shows the directory structure of the active source and is collapsible/expandable
   3. The repo switcher dropdown lists all registered sources and switching between them updates the file tree and content
   4. Clicking a file in the tree renders it in the content pane without a full page reload
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Tree API endpoint + fragment rendering mode (server-side)
+- [ ] 04-02-PLAN.md — Three-panel SPA shell with file tree, source switcher, and content pane + visual verification
+
+### Phase 4.5: GSD Dashboard (INSERTED)
+**Goal**: A multi-project dashboard surfaces GSD progress, editorial context, and phase documentation across registered sources and branches
+**Depends on**: Phase 4
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06
+**Success Criteria** (what must be TRUE):
+  1. A dashboard landing page shows card-style summaries for every registered source that contains `.planning/STATE.md`, with progress percentage and editorial description of current work
+  2. Each project card links directly to key files (PROJECT.md, STATE.md, ROADMAP.md) — one click to render
+  3. Clicking a project card navigates to a detail page with a horizontal phase timeline showing completed/in-progress/pending phases
+  4. Clicking a phase in the timeline shows that phase's documentation (plans, summaries, research, validation) in a sidebar with rendered content pane
+  5. For sources that are git repos with multiple branches containing `.planning/`, the dashboard shows per-branch milestone progress (read via `git show <branch>:.planning/STATE.md`)
+  6. Non-GSD sources (no `.planning/STATE.md`) still appear on the dashboard but fall back to the file browser view
 **Plans**: TBD
 
 ### Phase 5: Navigation Polish
@@ -103,13 +121,14 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 2/2 | Complete   | 2026-03-13 |
 | 2. Rendering | 2/2 | Complete   | 2026-03-13 |
-| 3. Source Registration | 2/3 | In Progress|  |
-| 4. Browser UI | 0/TBD | Not started | - |
+| 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
+| 4. Browser UI | 0/2 | Not started | - |
+| 4.5. GSD Dashboard | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

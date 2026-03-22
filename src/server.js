@@ -6,14 +6,91 @@ const Fastify = require('fastify');
 const mime = require('mime-types');
 const { isPathAllowed, readFileIfAllowed } = require('./filesystem.js');
 const { initRenderer, renderMarkdown, buildPage } = require('./renderer.js');
-const { enrichSourcesWithConventions, addSource, removeSource, listSources } = require('./sources.js');
+const { enrichSourcesWithConventions, addSource, removeSource, listSources, loadConfig, saveConfig } = require('./sources.js');
 
 // CSP header value — defined as a named constant for easy Phase 4 update
 // Phase 4: change script-src 'none' to script-src 'self' when adding frontend JS
 const CSP_HEADER = "default-src 'self'; script-src 'none'; object-src 'none'";
 
 // Relaxed CSP for the /sources management page — allows inline script execution
-const MANAGEMENT_CSP = "default-src 'self'; script-src 'self'; object-src 'none'";
+const MANAGEMENT_CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none'";
+
+// Directories treated as "convention" directories (sorted first, flagged with convention: true)
+const CONVENTION_DIRS = new Set(['.planning', 'docs']);
+
+/**
+ * buildTree(dirPath, relBase) — recursively build a JSON tree of .md files.
+ *
+ * Rules:
+ * - Only .md files are included; non-.md files are ignored
+ * - Directories with no .md descendants at any depth are omitted
+ * - Directories named in CONVENTION_DIRS get convention: true flag
+ * - Convention dirs are sorted before non-convention dirs; within each group, sorted alphabetically
+ * - File paths are relative to dirPath (the source root)
+ *
+ * @param {string} dirPath - Absolute path to scan
+ * @param {string} [relBase=''] - Relative base path (for building node path values)
+ * @returns {Promise<Array>} - Array of tree nodes
+ */
+async function buildTree(dirPath, relBase = '') {
+  let entries;
+  try {
+    entries = await fs.readdir(dirPath);
+  } catch {
+    return [];
+  }
+
+  const nodes = [];
+
+  for (const entry of entries) {
+    const absPath = path.join(dirPath, entry);
+    const relPath = relBase ? `${relBase}/${entry}` : entry;
+
+    let stat;
+    try {
+      stat = await fs.stat(absPath);
+    } catch {
+      continue;
+    }
+
+    if (stat.isDirectory()) {
+      const children = await buildTree(absPath, relPath);
+      // Omit directories that have no .md descendants at any depth
+      if (children.length === 0) continue;
+      const isConvention = CONVENTION_DIRS.has(entry);
+      nodes.push({
+        name: entry,
+        type: 'dir',
+        convention: isConvention,
+        children,
+      });
+    } else if (entry.endsWith('.md')) {
+      nodes.push({
+        name: entry,
+        type: 'file',
+        path: relPath,
+      });
+    }
+  }
+
+  // Sort: convention dirs first, then non-convention dirs, then files — each group alphabetically
+  nodes.sort((a, b) => {
+    const aIsConventionDir = a.type === 'dir' && a.convention === true;
+    const bIsConventionDir = b.type === 'dir' && b.convention === true;
+    const aIsDir = a.type === 'dir';
+    const bIsDir = b.type === 'dir';
+
+    if (aIsConventionDir !== bIsConventionDir) {
+      return aIsConventionDir ? -1 : 1;
+    }
+    if (aIsDir !== bIsDir) {
+      return aIsDir ? -1 : 1;
+    }
+    return a.name.localeCompare(b.name);
+  });
+
+  return nodes;
+}
 
 /**
  * Find which source contains the requested path (for path traversal check and routing).
@@ -99,6 +176,140 @@ function createServer(sources) {
     }
 
     return reply.code(400).send({ error: result.message || 'Failed to add source' });
+  });
+
+  // GET /api/sources/:name/files — list markdown files in a source, grouped by priority
+  fastify.get('/api/sources/:name/files', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const sourceName = request.params.name;
+    const sources = await listSources();
+    const source = sources.find(s => s.name === sourceName);
+
+    if (!source) {
+      return reply.code(404).send({ error: `Source not found: ${sourceName}` });
+    }
+
+    if (!source.available) {
+      return reply.code(404).send({ error: `Source unavailable: ${sourceName}` });
+    }
+
+    const files = { readme: [], planning: [], docs: [], other: [] };
+
+    // Helper: build file entry
+    const entry = (name, absPath) => ({ name, path: absPath });
+
+    // Check for root README.md (case-insensitive match)
+    try {
+      const rootEntries = await fs.readdir(source.path);
+      for (const name of rootEntries) {
+        if (name.toLowerCase() === 'readme.md') {
+          files.readme.push(entry(name, path.join(source.path, name)));
+        }
+      }
+    } catch { /* skip if unreadable */ }
+
+    // Check .planning/*.md
+    try {
+      const planningDir = path.join(source.path, '.planning');
+      const planningEntries = await fs.readdir(planningDir);
+      for (const name of planningEntries) {
+        if (name.endsWith('.md')) {
+          files.planning.push(entry(name, path.join(planningDir, name)));
+        }
+      }
+    } catch { /* skip if missing */ }
+
+    // Check docs/*.md
+    try {
+      const docsDir = path.join(source.path, 'docs');
+      const docsEntries = await fs.readdir(docsDir);
+      for (const name of docsEntries) {
+        if (name.endsWith('.md')) {
+          files.docs.push(entry(name, path.join(docsDir, name)));
+        }
+      }
+    } catch { /* skip if missing */ }
+
+    // Other *.md in root (excluding README.md already captured)
+    try {
+      const rootEntries = await fs.readdir(source.path);
+      const readmeNames = new Set(files.readme.map(f => f.name));
+      for (const name of rootEntries) {
+        if (name.endsWith('.md') && !readmeNames.has(name)) {
+          files.other.push(entry(name, path.join(source.path, name)));
+        }
+      }
+    } catch { /* skip if unreadable */ }
+
+    return reply.send({
+      source: { name: source.name, path: source.path },
+      files
+    });
+  });
+
+  // GET /api/sources/:name/tree — return a recursive JSON tree of .md files for a source
+  fastify.get('/api/sources/:name/tree', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const sourceName = request.params.name;
+    const source = activeSources.find(s => s.name === sourceName);
+    if (!source) return reply.code(404).send({ error: `Source not found: ${sourceName}` });
+    const tree = await buildTree(source.path);
+    return reply.send({ source: { name: source.name, path: source.path }, tree });
+  });
+
+  // PATCH /api/sources/:name — update source name or path
+  fastify.patch('/api/sources/:name', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const sourceName = request.params.name;
+    const { name: newName, path: newPath } = request.body || {};
+
+    if (!newName && !newPath) {
+      return reply.code(400).send({ error: 'Provide name or path to update' });
+    }
+
+    const config = await loadConfig();
+    const sourceIdx = config.sources.findIndex(s => s.name === sourceName);
+
+    if (sourceIdx === -1) {
+      return reply.code(404).send({ error: `Source not found: ${sourceName}` });
+    }
+
+    const source = config.sources[sourceIdx];
+
+    if (newName) {
+      const nameExists = config.sources.some((s, i) => i !== sourceIdx && s.name === newName);
+      if (nameExists) {
+        return reply.code(409).send({ error: `Name already taken: ${newName}` });
+      }
+      source.name = newName;
+    }
+
+    if (newPath) {
+      const resolvedPath = path.resolve(newPath);
+      const pathExists = config.sources.some((s, i) => i !== sourceIdx && s.path === resolvedPath);
+      if (pathExists) {
+        return reply.code(409).send({ error: 'Path already registered' });
+      }
+      source.path = resolvedPath;
+    }
+
+    config.sources[sourceIdx] = source;
+    await saveConfig(config);
+
+    const enriched = await enrichSourcesWithConventions([source]);
+    return reply.send({ source: enriched[0] });
   });
 
   // DELETE /api/sources/:identifier — remove a source by name or path
@@ -261,31 +472,21 @@ function createServer(sources) {
     }
 
     const bodyHtml = await renderMarkdown(content);
-    const html = buildPage({ filePath: requestedPath, bodyHtml });
+    const isFragment = request.query.fragment === 'true';
+    const html = buildPage({ filePath: requestedPath, bodyHtml, fragment: isFragment });
     return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
   });
 
-  // GET / — render README.md if present in any source, otherwise directory listing of first source
-  fastify.get('/', async (request, reply) => {
-    // Try to render README.md — check sources in order
-    for (const source of activeSources) {
-      const readmeContent = await readFileIfAllowed('README.md', source.path);
-      if (readmeContent !== null) {
-        const bodyHtml = await renderMarkdown(readmeContent);
-        const html = buildPage({ filePath: 'README.md', bodyHtml });
-        return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
-      }
+  // GET / — serve the browse page
+  fastify.get('/', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
     }
-
-    // Fallback: directory listing of first source
-    const firstSource = activeSources[0];
-    const entries = await fs.readdir(firstSource.path);
-    const annotated = [];
-    for (const entry of entries) {
-      const entryStat = await fs.stat(path.join(firstSource.path, entry));
-      annotated.push(entryStat.isDirectory() ? entry + '/' : entry);
-    }
-    return reply.send({ type: 'directory', path: '.', entries: annotated });
+  }, async (request, reply) => {
+    const htmlPath = path.join(__dirname, '..', 'public', 'index.html');
+    const html = await fs.readFile(htmlPath, 'utf8');
+    return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
   });
 
   return fastify;

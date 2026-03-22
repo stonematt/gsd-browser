@@ -179,9 +179,18 @@ async function renderMarkdown(source) {
 }
 
 /**
- * buildPage({ filePath, bodyHtml }) — sync, wraps bodyHtml in a complete HTML page.
+ * buildPage({ filePath, bodyHtml, fragment }) — sync, wraps bodyHtml in a complete HTML page,
+ * or returns just the bodyHtml fragment when fragment=true.
+ *
+ * @param {object} opts
+ * @param {string} opts.filePath - The file path for the page title/breadcrumb
+ * @param {string} opts.bodyHtml - The rendered markdown body (already wrapped in <div class="markdown-body">)
+ * @param {boolean} [opts.fragment=false] - If true, return only bodyHtml without full page boilerplate
  */
-function buildPage({ filePath, bodyHtml }) {
+function buildPage({ filePath, bodyHtml, fragment = false }) {
+  if (fragment) {
+    return bodyHtml;
+  }
   const escapedPath = escapeHtml(filePath);
   return `<!DOCTYPE html>
 <html lang="en">
@@ -193,6 +202,8 @@ function buildPage({ filePath, bodyHtml }) {
 </head>
 <body>
   <header class="breadcrumb">
+    <a href="/" style="color:#58a6ff;text-decoration:none">&larr; Home</a>
+    <span style="color:#8b949e;margin:0 6px">/</span>
     <code>${escapedPath}</code>
   </header>
   <main class="markdown-body">

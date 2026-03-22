@@ -42,6 +42,21 @@ before(async () => {
 
   // initRenderer required for /render route to work via fastify.inject()
   await initRenderer();
+
+  // Phase 4 Plan 01: Additional fixtures for tree API and fragment mode tests
+  await fs.mkdir(path.join(testDir, '.planning'), { recursive: true });
+  await fs.writeFile(path.join(testDir, '.planning', 'ROADMAP.md'), '# Roadmap\n');
+
+  await fs.mkdir(path.join(testDir, 'docs'), { recursive: true });
+  await fs.writeFile(path.join(testDir, 'docs', 'guide.md'), '# Guide\n');
+
+  await fs.mkdir(path.join(testDir, 'empty-dir'), { recursive: true });
+
+  await fs.mkdir(path.join(testDir, 'src'), { recursive: true });
+  await fs.writeFile(path.join(testDir, 'src', 'app.js'), 'const x = 1;\n');
+
+  await fs.mkdir(path.join(testDir, 'notes'), { recursive: true });
+  await fs.writeFile(path.join(testDir, 'notes', 'todo.md'), '# Todo\n');
 });
 
 after(async () => {
@@ -296,25 +311,14 @@ test('REND-02: GET /styles/markdown.css returns 200 text/css', async () => {
   await fastify.close();
 });
 
-test('SERV-02: GET / with README.md present returns 200 with rendered HTML', async () => {
+test('GET / serves the browse page with 200', async () => {
   const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/' });
   assert.equal(response.statusCode, 200);
   assert.ok(response.headers['content-type'].includes('text/html'), `expected text/html, got ${response.headers['content-type']}`);
-  assert.ok(response.body.includes('<!DOCTYPE html>'), 'response body should contain <!DOCTYPE html>');
+  assert.ok(response.body.includes('gsd-browser'), 'response body should contain gsd-browser title');
+  assert.ok(response.headers['content-security-policy'].includes("'unsafe-inline'"), 'browse page needs relaxed CSP');
   await fastify.close();
-});
-
-test('GET / without README.md falls back to directory listing', async () => {
-  const noReadmeDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-noreadme-'));
-  await fs.writeFile(path.join(noReadmeDir, 'file.txt'), 'content');
-  const fastify = createServer(makeSources(noReadmeDir));
-  const response = await fastify.inject({ method: 'GET', url: '/' });
-  // Should be JSON directory listing
-  const body = JSON.parse(response.body);
-  assert.equal(body.type, 'directory');
-  await fastify.close();
-  await fs.rm(noReadmeDir, { recursive: true, force: true });
 });
 
 // ============================================================
@@ -563,5 +567,141 @@ test("SRC-06: GET /render still has strict CSP (script-src 'none')", async () =>
   const csp = response.headers['content-security-policy'];
   assert.ok(csp, 'Content-Security-Policy header should be present');
   assert.ok(csp.includes("script-src 'none'"), `CSP should contain script-src 'none', got: ${csp}`);
+  await fastify.close();
+});
+
+// ============================================================
+// Phase 4 Plan 01: Tree API and fragment mode
+// ============================================================
+
+// Additional fixtures are created in the shared before() hook at the top of this file.
+
+// Tree endpoint tests
+test('NAV-01: GET /api/sources/:name/tree returns 200 with source and tree fields', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/test/tree' });
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  assert.ok(body.source, 'response should have source field');
+  assert.ok(Array.isArray(body.tree), 'response should have tree array');
+  await fastify.close();
+});
+
+test('NAV-01: tree includes .md files with { name, type: "file", path } shape', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/test/tree' });
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  // Find the README.md at root
+  const readme = body.tree.find(n => n.name === 'README.md' && n.type === 'file');
+  assert.ok(readme, 'README.md should be in tree as a file node');
+  assert.ok(readme.path, 'file node should have a path');
+  assert.equal(readme.type, 'file');
+  await fastify.close();
+});
+
+test('NAV-01: tree includes directories with { name, type: "dir", children } shape', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/test/tree' });
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  // .planning is a convention dir, should have children
+  const planningDir = body.tree.find(n => n.name === '.planning' && n.type === 'dir');
+  assert.ok(planningDir, '.planning dir should be in tree');
+  assert.ok(Array.isArray(planningDir.children), '.planning dir should have children array');
+  await fastify.close();
+});
+
+test('NAV-01: convention directories (.planning) have convention: true flag', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/test/tree' });
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  const planningDir = body.tree.find(n => n.name === '.planning');
+  assert.ok(planningDir, '.planning dir should be in tree');
+  assert.equal(planningDir.convention, true, '.planning should have convention: true');
+  await fastify.close();
+});
+
+test('NAV-01: non-convention directories have convention: false flag', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/test/tree' });
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  const notesDir = body.tree.find(n => n.name === 'notes' && n.type === 'dir');
+  assert.ok(notesDir, 'notes dir should be in tree');
+  assert.equal(notesDir.convention, false, 'notes dir should have convention: false');
+  await fastify.close();
+});
+
+test('NAV-01: directories with no .md files at any depth are omitted from tree', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/test/tree' });
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  // empty-dir has no .md files, should be absent
+  const emptyDir = body.tree.find(n => n.name === 'empty-dir');
+  assert.equal(emptyDir, undefined, 'empty-dir should be omitted from tree');
+  // src/ has only .js files, should be absent
+  const srcDir = body.tree.find(n => n.name === 'src');
+  assert.equal(srcDir, undefined, 'src/ (no .md files) should be omitted from tree');
+  await fastify.close();
+});
+
+test('NAV-01: convention directories are sorted before non-convention directories', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/test/tree' });
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  const dirs = body.tree.filter(n => n.type === 'dir');
+  const firstConventionIdx = dirs.findIndex(n => n.convention === true);
+  const firstNonConventionIdx = dirs.findIndex(n => n.convention === false);
+  if (firstConventionIdx !== -1 && firstNonConventionIdx !== -1) {
+    assert.ok(
+      firstConventionIdx < firstNonConventionIdx,
+      `convention dirs should come before non-convention dirs, got order: ${dirs.map(d => d.name).join(', ')}`
+    );
+  }
+  await fastify.close();
+});
+
+test('NAV-01: GET /api/sources/nonexistent/tree returns 404', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/api/sources/nonexistent/tree' });
+  assert.equal(response.statusCode, 404);
+  await fastify.close();
+});
+
+// Fragment mode tests
+test('NAV-02: GET /render?path=X&fragment=true returns HTML without "<!DOCTYPE html>"', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md&fragment=true' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(!response.body.includes('<!DOCTYPE html>'), 'fragment should NOT contain <!DOCTYPE html>');
+  await fastify.close();
+});
+
+test('NAV-02: GET /render?path=X&fragment=true returns HTML containing "markdown-body"', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md&fragment=true' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('markdown-body'), 'fragment should contain markdown-body class');
+  await fastify.close();
+});
+
+test('NAV-02: GET /render?path=X (no fragment param) still returns full page with "<!DOCTYPE html>"', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('<!DOCTYPE html>'), 'full page should contain <!DOCTYPE html>');
+  await fastify.close();
+});
+
+test("NAV-02: GET /render?path=X&fragment=true has strict CSP (script-src 'none')", async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/render?path=test.md&fragment=true' });
+  const csp = response.headers['content-security-policy'];
+  assert.ok(csp, 'Content-Security-Policy header should be present');
+  assert.ok(csp.includes("script-src 'none'"), `fragment CSP should contain script-src 'none', got: ${csp}`);
   await fastify.close();
 });

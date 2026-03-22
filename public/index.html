@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>gsd-browser</title>
+  <link rel="stylesheet" href="/styles/markdown.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      display: grid;
+      grid-template-rows: 44px 1fr;
+      grid-template-columns: 260px 1fr;
+      grid-template-areas:
+        "header header"
+        "sidebar content";
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    body.sidebar-hidden {
+      grid-template-columns: 0 1fr;
+    }
+
+    body.sidebar-hidden #sidebar {
+      display: none;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Header                                                               */
+    /* ------------------------------------------------------------------ */
+
+    #app-header {
+      grid-area: header;
+      background: #161b22;
+      border-bottom: 1px solid #21262d;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+    }
+
+    #sidebar-toggle {
+      background: none;
+      border: 1px solid #21262d;
+      color: #8b949e;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 14px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    #sidebar-toggle:hover {
+      background: #21262d;
+      color: #c9d1d9;
+    }
+
+    #breadcrumb {
+      flex: 1;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 12px;
+      color: #8b949e;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #breadcrumb .bc-sep {
+      margin: 0 4px;
+      color: #484f58;
+    }
+
+    #breadcrumb .bc-file {
+      color: #f0f6fc;
+    }
+
+    .header-link {
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .header-link:hover {
+      text-decoration: underline;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Sidebar                                                              */
+    /* ------------------------------------------------------------------ */
+
+    #sidebar {
+      grid-area: sidebar;
+      background: #161b22;
+      border-right: 1px solid #21262d;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #source-switcher {
+      padding: 10px 12px;
+      border-bottom: 1px solid #21262d;
+      flex-shrink: 0;
+    }
+
+    #source-select {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      color: #c9d1d9;
+      padding: 5px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    #source-select:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    #tree {
+      flex: 1;
+      padding: 8px 0;
+      overflow-y: auto;
+    }
+
+    .tree-empty {
+      color: #484f58;
+      font-style: italic;
+      padding: 16px 12px;
+      font-size: 13px;
+    }
+
+    .tree-node {
+      display: block;
+    }
+
+    .tree-dir {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      background: none;
+      border: none;
+      color: #8b949e;
+      cursor: pointer;
+      padding: 3px 0;
+      font-size: 13px;
+      font-family: inherit;
+      text-align: left;
+    }
+
+    .tree-dir:hover {
+      color: #c9d1d9;
+    }
+
+    .tree-dir--convention {
+      color: #c9d1d9;
+      font-weight: 600;
+    }
+
+    .tree-dir--convention:hover {
+      color: #f0f6fc;
+    }
+
+    .tree-dir-arrow {
+      display: inline-block;
+      width: 14px;
+      font-size: 10px;
+      transition: transform 0.1s;
+      color: #484f58;
+      flex-shrink: 0;
+    }
+
+    .tree-dir.collapsed .tree-dir-arrow {
+      transform: rotate(-90deg);
+    }
+
+    .tree-children {
+      /* visible by default; collapsed dirs hide this */
+    }
+
+    .tree-children[hidden] {
+      display: none;
+    }
+
+    .tree-file {
+      display: block;
+      color: #58a6ff;
+      text-decoration: none;
+      padding: 3px 0;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tree-file:hover {
+      text-decoration: underline;
+    }
+
+    .tree-file.active {
+      background: rgba(31, 111, 235, 0.12);
+      border-left: 2px solid #58a6ff;
+      color: #f0f6fc;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Content pane                                                         */
+    /* ------------------------------------------------------------------ */
+
+    #content {
+      grid-area: content;
+      background: #0d1117;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .content-loading {
+      color: #8b949e;
+      font-style: italic;
+      padding: 24px 0;
+    }
+
+    .content-empty {
+      color: #484f58;
+      font-style: italic;
+      padding: 24px 0;
+    }
+
+    .content-error {
+      color: #f85149;
+      padding: 24px 0;
+    }
+
+    /* Constrain markdown content to a readable width */
+    #content .markdown-body {
+      max-width: 860px;
+    }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <button id="sidebar-toggle" title="Toggle sidebar">&#9776;</button>
+    <nav id="breadcrumb"><span class="bc-file">gsd-browser</span></nav>
+    <a class="header-link" href="/sources">Manage Sources</a>
+  </header>
+
+  <aside id="sidebar">
+    <div id="source-switcher">
+      <select id="source-select" aria-label="Select source"></select>
+    </div>
+    <div id="tree"></div>
+  </aside>
+
+  <main id="content">
+    <p class="content-loading">Loading...</p>
+  </main>
+
+  <script>
+    // ----------------------------------------------------------------
+    // State
+    // ----------------------------------------------------------------
+    let currentSource = null;
+    let sourcesList = [];
+    const lastViewedFile = new Map();
+    let treeData = null;
+
+    // ----------------------------------------------------------------
+    // Utilities
+    // ----------------------------------------------------------------
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Parse #/source-name/path/to/file.md
+    // Returns { sourceName, filePath } — both may be empty string
+    function parseHash(hash) {
+      if (!hash || hash === '#' || hash === '#/') {
+        return { sourceName: '', filePath: '' };
+      }
+      const raw = hash.replace(/^#\/?/, '');
+      const slashIdx = raw.indexOf('/');
+      if (slashIdx === -1) {
+        return { sourceName: raw, filePath: '' };
+      }
+      return {
+        sourceName: raw.slice(0, slashIdx),
+        filePath: raw.slice(slashIdx + 1)
+      };
+    }
+
+    function buildHashUrl(sourceName, filePath) {
+      return '#/' + sourceName + (filePath ? '/' + filePath : '');
+    }
+
+    // ----------------------------------------------------------------
+    // Navigation
+    // ----------------------------------------------------------------
+
+    function navigateTo(sourceName, filePath) {
+      const url = buildHashUrl(sourceName, filePath);
+      history.pushState(null, '', url);
+      loadFile(sourceName, filePath);
+    }
+
+    // ----------------------------------------------------------------
+    // Breadcrumb
+    // ----------------------------------------------------------------
+
+    function updateBreadcrumb(sourceName, filePath) {
+      const bc = document.getElementById('breadcrumb');
+      bc.textContent = '';
+
+      const sourceSpan = document.createElement('span');
+      sourceSpan.className = 'bc-file';
+      sourceSpan.textContent = sourceName || 'gsd-browser';
+      bc.appendChild(sourceSpan);
+
+      if (!filePath) return;
+
+      const parts = filePath.split('/');
+      for (let i = 0; i < parts.length; i++) {
+        const sep = document.createElement('span');
+        sep.className = 'bc-sep';
+        sep.textContent = '/';
+        bc.appendChild(sep);
+
+        const part = document.createElement('span');
+        if (i === parts.length - 1) {
+          part.className = 'bc-file';
+        }
+        part.textContent = parts[i];
+        bc.appendChild(part);
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // File loading
+    // ----------------------------------------------------------------
+
+    async function loadFile(sourceName, filePath) {
+      if (!filePath) return;
+
+      const contentEl = document.getElementById('content');
+
+      // 200ms loading indicator guard
+      let loadingTimer = setTimeout(() => {
+        contentEl.innerHTML = '<p class="content-loading">Loading...</p>';
+      }, 200);
+
+      try {
+        const url = '/render?path=' + encodeURIComponent(filePath) + '&fragment=true';
+        const res = await fetch(url);
+
+        clearTimeout(loadingTimer);
+
+        if (!res.ok) {
+          contentEl.innerHTML = '<p class="content-error">Failed to load file (HTTP ' + escapeHtml(String(res.status)) + ')</p>';
+          return;
+        }
+
+        const html = await res.text();
+        contentEl.innerHTML = html;
+        contentEl.scrollTop = 0;
+
+        updateBreadcrumb(sourceName, filePath);
+        lastViewedFile.set(sourceName, filePath);
+        setActiveFile(filePath);
+      } catch (err) {
+        clearTimeout(loadingTimer);
+        contentEl.innerHTML = '<p class="content-error">Error: ' + escapeHtml(err.message) + '</p>';
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // Active file highlighting
+    // ----------------------------------------------------------------
+
+    function setActiveFile(filePath) {
+      // Remove existing active highlight
+      const prev = document.querySelectorAll('.tree-file.active');
+      prev.forEach(el => el.classList.remove('active'));
+
+      if (!filePath) return;
+
+      // Find matching file link
+      const link = document.querySelector('.tree-file[data-path="' + CSS.escape(filePath) + '"]');
+      if (!link) return;
+
+      link.classList.add('active');
+
+      // Walk up DOM, expanding all ancestor tree-children containers
+      let parent = link.parentElement;
+      while (parent) {
+        if (parent.classList && parent.classList.contains('tree-children')) {
+          parent.hidden = false;
+          // Also un-collapse the corresponding dir button
+          const dirBtn = parent.previousElementSibling;
+          if (dirBtn && dirBtn.classList.contains('tree-dir')) {
+            dirBtn.classList.remove('collapsed');
+          }
+        }
+        parent = parent.parentElement;
+      }
+
+      link.scrollIntoView({ block: 'nearest' });
+    }
+
+    // ----------------------------------------------------------------
+    // Tree building
+    // ----------------------------------------------------------------
+
+    function buildTreeNode(node, sourceName, depth) {
+      const indent = depth * 16;
+
+      if (node.type === 'file') {
+        const a = document.createElement('a');
+        a.className = 'tree-file';
+        a.href = buildHashUrl(sourceName, node.path);
+        a.dataset.path = node.path;
+        a.dataset.source = sourceName;
+        a.style.paddingLeft = (indent + 8) + 'px';
+        a.style.paddingRight = '8px';
+        a.textContent = node.name;
+
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          lastViewedFile.set(sourceName, node.path);
+          navigateTo(sourceName, node.path);
+        });
+
+        return a;
+      }
+
+      if (node.type === 'dir') {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'tree-node';
+
+        const isConvention = node.convention === true;
+        const startCollapsed = !isConvention;
+
+        const btn = document.createElement('button');
+        btn.className = 'tree-dir' + (isConvention ? ' tree-dir--convention' : '');
+        if (startCollapsed) btn.classList.add('collapsed');
+        btn.style.paddingLeft = indent + 'px';
+        btn.style.paddingRight = '8px';
+
+        const arrow = document.createElement('span');
+        arrow.className = 'tree-dir-arrow';
+        arrow.textContent = '\u25BC';  // ▼
+        btn.appendChild(arrow);
+
+        const label = document.createElement('span');
+        label.textContent = node.name;
+        btn.appendChild(label);
+
+        const childContainer = document.createElement('div');
+        childContainer.className = 'tree-children';
+        childContainer.hidden = startCollapsed;
+
+        btn.addEventListener('click', () => {
+          const isCollapsed = btn.classList.toggle('collapsed');
+          childContainer.hidden = isCollapsed;
+        });
+
+        for (const child of (node.children || [])) {
+          const childEl = buildTreeNode(child, sourceName, depth + 1);
+          if (childEl) childContainer.appendChild(childEl);
+        }
+
+        wrapper.appendChild(btn);
+        wrapper.appendChild(childContainer);
+        return wrapper;
+      }
+
+      return null;
+    }
+
+    // ----------------------------------------------------------------
+    // Source loading
+    // ----------------------------------------------------------------
+
+    async function loadSources() {
+      try {
+        const res = await fetch('/api/sources');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        sourcesList = (data.sources || []).filter(s => s.available);
+
+        const select = document.getElementById('source-select');
+        select.textContent = '';
+
+        if (sourcesList.length === 0) {
+          const opt = document.createElement('option');
+          opt.textContent = 'No sources registered';
+          opt.disabled = true;
+          select.appendChild(opt);
+          return;
+        }
+
+        for (const src of sourcesList) {
+          const opt = document.createElement('option');
+          opt.value = src.name;
+          opt.textContent = src.name + '  (' + src.path + ')';
+          select.appendChild(opt);
+        }
+
+        if (currentSource) {
+          select.value = currentSource;
+        }
+      } catch (err) {
+        document.getElementById('content').innerHTML =
+          '<p class="content-error">Failed to load sources: ' + escapeHtml(err.message) + '</p>';
+      }
+    }
+
+    async function loadTree(sourceName) {
+      const treeEl = document.getElementById('tree');
+      treeEl.textContent = '';
+
+      try {
+        const res = await fetch('/api/sources/' + encodeURIComponent(sourceName) + '/tree');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        treeData = data.tree;
+
+        if (!treeData || treeData.length === 0) {
+          const msg = document.createElement('p');
+          msg.className = 'tree-empty';
+          msg.textContent = 'No markdown files found.';
+          treeEl.appendChild(msg);
+          return;
+        }
+
+        for (const node of treeData) {
+          const el = buildTreeNode(node, sourceName, 0);
+          if (el) treeEl.appendChild(el);
+        }
+      } catch (err) {
+        const msg = document.createElement('p');
+        msg.className = 'tree-empty';
+        msg.textContent = 'Failed to load file tree.';
+        treeEl.appendChild(msg);
+      }
+    }
+
+    // Find first .md file in the tree (BFS)
+    function findFirstFile(nodes) {
+      const queue = [...(nodes || [])];
+      while (queue.length) {
+        const node = queue.shift();
+        if (node.type === 'file') return node.path;
+        if (node.children) queue.push(...node.children);
+      }
+      return null;
+    }
+
+    // Find README.md at any top-level position
+    function findReadme(nodes) {
+      for (const node of (nodes || [])) {
+        if (node.type === 'file' && node.name.toLowerCase() === 'readme.md') {
+          return node.path;
+        }
+      }
+      return null;
+    }
+
+    async function switchSource(sourceName) {
+      currentSource = sourceName;
+      document.getElementById('source-select').value = sourceName;
+
+      await loadTree(sourceName);
+
+      // Decide which file to load
+      let fileToLoad = lastViewedFile.get(sourceName) || null;
+
+      if (!fileToLoad) {
+        fileToLoad = findReadme(treeData) || findFirstFile(treeData);
+      }
+
+      if (fileToLoad) {
+        // Update hash without adding to history (initial source load)
+        history.replaceState(null, '', buildHashUrl(sourceName, fileToLoad));
+        await loadFile(sourceName, fileToLoad);
+      } else {
+        document.getElementById('content').innerHTML =
+          '<p class="content-empty">No markdown files found in this source.</p>';
+        updateBreadcrumb(sourceName, '');
+        history.replaceState(null, '', buildHashUrl(sourceName, ''));
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // Sidebar toggle
+    // ----------------------------------------------------------------
+
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-hidden');
+    }
+
+    // ----------------------------------------------------------------
+    // Boot sequence
+    // ----------------------------------------------------------------
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Wire up controls
+      document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+      document.getElementById('source-select').addEventListener('change', (e) => {
+        switchSource(e.target.value);
+      });
+
+      // Load sources first
+      await loadSources();
+
+      if (sourcesList.length === 0) {
+        document.getElementById('content').innerHTML =
+          '<p class="content-empty">No sources registered. <a href="/sources" style="color:#58a6ff">Add a source</a> to get started.</p>';
+        return;
+      }
+
+      // Parse the initial hash to determine starting state
+      const { sourceName, filePath } = parseHash(window.location.hash);
+
+      if (sourceName && sourcesList.some(s => s.name === sourceName)) {
+        // Hash specifies a known source
+        currentSource = sourceName;
+        document.getElementById('source-select').value = sourceName;
+        await loadTree(sourceName);
+
+        if (filePath) {
+          lastViewedFile.set(sourceName, filePath);
+          await loadFile(sourceName, filePath);
+        } else {
+          const first = findReadme(treeData) || findFirstFile(treeData);
+          if (first) {
+            history.replaceState(null, '', buildHashUrl(sourceName, first));
+            await loadFile(sourceName, first);
+          }
+        }
+      } else {
+        // Default to first source
+        await switchSource(sourcesList[0].name);
+      }
+
+      // Handle browser back/forward
+      window.addEventListener('popstate', async () => {
+        const { sourceName: src, filePath: fp } = parseHash(window.location.hash);
+        if (!src) return;
+
+        if (src !== currentSource) {
+          currentSource = src;
+          document.getElementById('source-select').value = src;
+          await loadTree(src);
+        }
+
+        if (fp) {
+          await loadFile(src, fp);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

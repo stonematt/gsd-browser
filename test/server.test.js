@@ -705,3 +705,56 @@ test("NAV-02: GET /render?path=X&fragment=true has strict CSP (script-src 'none'
   assert.ok(csp.includes("script-src 'none'"), `fragment CSP should contain script-src 'none', got: ${csp}`);
   await fastify.close();
 });
+
+// ============================================================
+// Phase 4 Plan 02: SPA shell HTML structure smoke tests
+// ============================================================
+
+test('NAV-03: GET / response contains id="sidebar" element', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('id="sidebar"'), 'response body should contain id="sidebar"');
+  await fastify.close();
+});
+
+test('NAV-03: GET / response contains id="content" element', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('id="content"'), 'response body should contain id="content"');
+  await fastify.close();
+});
+
+test('NAV-03: GET / response contains id="app-header" element', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('id="app-header"'), 'response body should contain id="app-header"');
+  await fastify.close();
+});
+
+test('NAV-03: GET / response contains id="source-select" element', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('id="source-select"'), 'response body should contain id="source-select"');
+  await fastify.close();
+});
+
+test('NAV-03: GET / response contains dark theme background color (#0d1117)', async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  assert.equal(response.statusCode, 200);
+  assert.ok(response.body.includes('#0d1117'), 'response body should contain dark theme color #0d1117');
+  await fastify.close();
+});
+
+test("NAV-03: GET / has MANAGEMENT_CSP (script-src 'unsafe-inline')", async () => {
+  const fastify = createServer(makeSources(testDir));
+  const response = await fastify.inject({ method: 'GET', url: '/' });
+  const csp = response.headers['content-security-policy'];
+  assert.ok(csp, 'Content-Security-Policy header should be present');
+  assert.ok(csp.includes("'unsafe-inline'"), `GET / should have MANAGEMENT_CSP with 'unsafe-inline', got: ${csp}`);
+  await fastify.close();
+});

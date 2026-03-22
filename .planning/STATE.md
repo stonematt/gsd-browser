@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Completed 04-browser-ui-01-PLAN.md
-last_updated: "2026-03-22T15:21:06.299Z"
+stopped_at: "Checkpoint: awaiting human browser verification of 04-02 SPA shell"
+last_updated: "2026-03-22T15:25:04.374Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
   percent: 43
 ---
 
@@ -58,6 +58,7 @@ Progress: [████░░░░░░] 43%
 | Phase 03-source-registration P02 | 3min | 2 tasks | 3 files |
 | Phase 03-source-registration P03 | <1min | 1 task (verify) | 3 files |
 | Phase 04-browser-ui P01 | 3min | 1 tasks | 3 files |
+| Phase 04-browser-ui P02 | 1min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ Recent decisions affecting current work:
 - [Phase 03-source-registration P03]: activeSources mutable reference in createServer closure, updated after add/remove so /file and /render serve current state without restart
 - [Phase 04-browser-ui]: Tree endpoint uses activeSources (server closure) not listSources() — consistent with /file and /render routes
 - [Phase 04-browser-ui]: fragment=false default in buildPage() preserves backward compatibility with all existing /render callers
+- [Phase 04-browser-ui]: Single-file SPA with inline style/script — no build tooling, consistent with sources.html pattern
+- [Phase 04-browser-ui]: Rebuild entire tree on source switch to avoid data-path collisions across sources
+- [Phase 04-browser-ui]: history.replaceState for initial loads and source switches; pushState only for explicit file clicks
 
 ### Pending Todos
 
@@ -107,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T15:21:06.297Z
-Stopped at: Completed 04-browser-ui-01-PLAN.md
+Last session: 2026-03-22T15:25:04.372Z
+Stopped at: Checkpoint: awaiting human browser verification of 04-02 SPA shell
 Resume file: None

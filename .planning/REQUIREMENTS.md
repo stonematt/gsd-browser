@@ -31,7 +31,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **NAV-01**: File tree sidebar shows directory structure of the active source
 - [x] **NAV-02**: File tree is collapsible/expandable for nested directories
-- [ ] **NAV-03**: Repo switcher (dropdown) allows jumping between registered sources
+- [x] **NAV-03**: Repo switcher (dropdown) allows jumping between registered sources
 - [ ] **NAV-04**: Relative markdown links resolve correctly within a source
 - [ ] **NAV-05**: Heading anchors are auto-generated and clickable
 - [ ] **NAV-06**: Inline table of contents generated per document from headings
@@ -43,8 +43,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Design
 
-- [ ] **DSGN-01**: Minimalist, developer-centric UI layout (sidebar + content pane)
-- [ ] **DSGN-02**: Dark default theme suitable for developer use
+- [x] **DSGN-01**: Minimalist, developer-centric UI layout (sidebar + content pane)
+- [x] **DSGN-02**: Dark default theme suitable for developer use
 
 ### GSD Dashboard
 
@@ -116,14 +116,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRC-06 | Phase 3 | Pending |
 | NAV-01 | Phase 4 | Complete |
 | NAV-02 | Phase 4 | Complete |
-| NAV-03 | Phase 4 | Pending |
+| NAV-03 | Phase 4 | Complete |
 | NAV-04 | Phase 5 | Pending |
 | NAV-05 | Phase 5 | Pending |
 | NAV-06 | Phase 5 | Pending |
 | REND-01 | Phase 2 | Complete |
 | REND-02 | Phase 2 | Complete |
-| DSGN-01 | Phase 4 | Pending |
-| DSGN-02 | Phase 4 | Pending |
+| DSGN-01 | Phase 4 | Complete |
+| DSGN-02 | Phase 4 | Complete |
 | DASH-01 | Phase 4.5 | Pending |
 | DASH-02 | Phase 4.5 | Pending |
 | DASH-03 | Phase 4.5 | Pending |

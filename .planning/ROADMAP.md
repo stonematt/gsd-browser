@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Foundation** - Secure localhost HTTP server with path safety and CSP headers (completed 2026-03-13)
 - [x] **Phase 2: Rendering** - GFM markdown rendering with syntax highlighting, fresh-from-disk on every request (completed 2026-03-13)
 - [x] **Phase 3: Source Registration** - CLI source management with persistence and convention-based discovery (completed 2026-03-20)
-- [ ] **Phase 4: Browser UI** - Vanilla JS frontend shell with file tree, repo switcher, and dark theme
+- [x] **Phase 4: Browser UI** - Vanilla JS frontend shell with file tree, repo switcher, and dark theme (completed 2026-03-22)
 - [ ] **Phase 4.5: GSD Dashboard** - Multi-project progress dashboard with phase timeline, editorial context, and branch awareness (INSERTED)
 - [ ] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams
 - [ ] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX
@@ -79,7 +79,7 @@ Plans:
   2. The file tree sidebar shows the directory structure of the active source and is collapsible/expandable
   3. The repo switcher dropdown lists all registered sources and switching between them updates the file tree and content
   4. Clicking a file in the tree renders it in the content pane without a full page reload
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md — Tree API endpoint + fragment rendering mode (server-side)
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 5 -> 6
 | 1. Foundation | 2/2 | Complete   | 2026-03-13 |
 | 2. Rendering | 2/2 | Complete   | 2026-03-13 |
 | 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
-| 4. Browser UI | 1/2 | In Progress|  |
+| 4. Browser UI | 2/2 | Complete   | 2026-03-22 |
 | 4.5. GSD Dashboard | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

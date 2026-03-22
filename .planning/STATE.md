@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-21T22:23:02.938Z"
+stopped_at: Completed 04-browser-ui-01-PLAN.md
+last_updated: "2026-03-22T15:21:06.299Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 9
+  completed_plans: 8
   percent: 43
 ---
 
@@ -57,6 +57,7 @@ Progress: [████░░░░░░] 43%
 | Phase 03-source-registration P01 | 2min | 1 task (TDD) | 2 files |
 | Phase 03-source-registration P02 | 3min | 2 tasks | 3 files |
 | Phase 03-source-registration P03 | <1min | 1 task (verify) | 3 files |
+| Phase 04-browser-ui P01 | 3min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,8 @@ Recent decisions affecting current work:
 - [Phase 03-source-registration P01]: Auto-suffix duplicate names (-2, -3) over interactive prompt — pipe-safe design
 - [Phase 03-source-registration P03]: Per-route CSP override via onSend hook — global preHandler sets strict CSP, management routes override to allow scripts/styles via MANAGEMENT_CSP
 - [Phase 03-source-registration P03]: activeSources mutable reference in createServer closure, updated after add/remove so /file and /render serve current state without restart
+- [Phase 04-browser-ui]: Tree endpoint uses activeSources (server closure) not listSources() — consistent with /file and /render routes
+- [Phase 04-browser-ui]: fragment=false default in buildPage() preserves backward compatibility with all existing /render callers
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-21T22:23:02.935Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-browser-ui/04-CONTEXT.md
+Last session: 2026-03-22T15:21:06.297Z
+Stopped at: Completed 04-browser-ui-01-PLAN.md
+Resume file: None

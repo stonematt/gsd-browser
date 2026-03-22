@@ -79,7 +79,7 @@ Plans:
   2. The file tree sidebar shows the directory structure of the active source and is collapsible/expandable
   3. The repo switcher dropdown lists all registered sources and switching between them updates the file tree and content
   4. Clicking a file in the tree renders it in the content pane without a full page reload
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 04-01-PLAN.md — Tree API endpoint + fragment rendering mode (server-side)
@@ -128,7 +128,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 5 -> 6
 | 1. Foundation | 2/2 | Complete   | 2026-03-13 |
 | 2. Rendering | 2/2 | Complete   | 2026-03-13 |
 | 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
-| 4. Browser UI | 0/2 | Not started | - |
+| 4. Browser UI | 1/2 | In Progress|  |
 | 4.5. GSD Dashboard | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

@@ -29,8 +29,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Navigation
 
-- [ ] **NAV-01**: File tree sidebar shows directory structure of the active source
-- [ ] **NAV-02**: File tree is collapsible/expandable for nested directories
+- [x] **NAV-01**: File tree sidebar shows directory structure of the active source
+- [x] **NAV-02**: File tree is collapsible/expandable for nested directories
 - [ ] **NAV-03**: Repo switcher (dropdown) allows jumping between registered sources
 - [ ] **NAV-04**: Relative markdown links resolve correctly within a source
 - [ ] **NAV-05**: Heading anchors are auto-generated and clickable
@@ -45,6 +45,15 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **DSGN-01**: Minimalist, developer-centric UI layout (sidebar + content pane)
 - [ ] **DSGN-02**: Dark default theme suitable for developer use
+
+### GSD Dashboard
+
+- [ ] **DASH-01**: Dashboard landing page shows project cards for all registered sources with GSD planning artifacts
+- [ ] **DASH-02**: Each project card displays progress percentage, editorial summary of active work (from STATE.md), and quick-links to key files (PROJECT.md, STATE.md, ROADMAP.md)
+- [ ] **DASH-03**: Project detail page shows horizontal phase timeline with completed/in-progress/pending status
+- [ ] **DASH-04**: Clicking a phase in the timeline shows that phase's documentation (plans, summaries, research, validation) with rendered content
+- [ ] **DASH-05**: Branch-aware progress — for git repos with multiple branches containing `.planning/`, show per-branch milestone progress
+- [ ] **DASH-06**: Non-GSD sources (no `.planning/STATE.md`) appear on dashboard with graceful fallback to file browser
 
 ### Distribution
 
@@ -105,8 +114,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SRC-04 | Phase 3 | Complete |
 | SRC-05 | Phase 3 | Complete |
 | SRC-06 | Phase 3 | Pending |
-| NAV-01 | Phase 4 | Pending |
-| NAV-02 | Phase 4 | Pending |
+| NAV-01 | Phase 4 | Complete |
+| NAV-02 | Phase 4 | Complete |
 | NAV-03 | Phase 4 | Pending |
 | NAV-04 | Phase 5 | Pending |
 | NAV-05 | Phase 5 | Pending |
@@ -115,12 +124,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-02 | Phase 2 | Complete |
 | DSGN-01 | Phase 4 | Pending |
 | DSGN-02 | Phase 4 | Pending |
+| DASH-01 | Phase 4.5 | Pending |
+| DASH-02 | Phase 4.5 | Pending |
+| DASH-03 | Phase 4.5 | Pending |
+| DASH-04 | Phase 4.5 | Pending |
+| DASH-05 | Phase 4.5 | Pending |
+| DASH-06 | Phase 4.5 | Pending |
 | DIST-01 | Phase 6 | Pending |
 | DIST-02 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 26 total
-- Mapped to phases: 26
+- v1 requirements: 32 total
+- Mapped to phases: 32
 - Unmapped: 0
 
 ---

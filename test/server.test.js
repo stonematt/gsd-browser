@@ -7,7 +7,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { execSync } = require('node:child_process');
 
-const { createServer, start } = require('../src/server.js');
+const { createServer, start, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName } = require('../src/server.js');
 const { initRenderer } = require('../src/renderer.js');
 
 let testDir;
@@ -757,4 +757,160 @@ test("NAV-03: GET / has MANAGEMENT_CSP (script-src 'unsafe-inline')", async () =
   assert.ok(csp, 'Content-Security-Policy header should be present');
   assert.ok(csp.includes("'unsafe-inline'"), `GET / should have MANAGEMENT_CSP with 'unsafe-inline', got: ${csp}`);
   await fastify.close();
+});
+
+// ============================================================
+// Phase 4.5 Plan 01 - Task 1: Helper utilities (TDD)
+// ============================================================
+
+// Separate testDir for Phase 4.5 fixtures
+let gsdTestDir;
+
+before(async () => {
+  gsdTestDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-dash-test-'));
+
+  // STATE.md with YAML frontmatter
+  const stateMdContent = [
+    '---',
+    'gsd_state_version: 1.0',
+    'milestone: v1.0',
+    'milestone_name: milestone',
+    'status: Phase 4.5 context gathered',
+    'stopped_at: Phase 4.5 context gathered',
+    'last_updated: "2026-03-23T03:42:33.322Z"',
+    'last_activity: 2026-03-21 — Added Phase 4.5',
+    'progress:',
+    '  total_phases: 7',
+    '  completed_phases: 4',
+    '  total_plans: 9',
+    '  completed_plans: 9',
+    '  percent: 43',
+    '---',
+    '',
+    '# Project State',
+    '',
+    'Some content here.',
+  ].join('\n');
+
+  await fs.mkdir(path.join(gsdTestDir, '.planning', 'phases', '01-test'), { recursive: true });
+  await fs.mkdir(path.join(gsdTestDir, '.planning', 'phases', '02-wip'), { recursive: true });
+  await fs.writeFile(path.join(gsdTestDir, '.planning', 'STATE.md'), stateMdContent);
+
+  // 01-test: 2 PLANs, 2 SUMMARYs
+  await fs.writeFile(path.join(gsdTestDir, '.planning', 'phases', '01-test', '01-01-PLAN.md'), '# Plan 1\n');
+  await fs.writeFile(path.join(gsdTestDir, '.planning', 'phases', '01-test', '01-01-SUMMARY.md'), '# Summary 1\n');
+  await fs.writeFile(path.join(gsdTestDir, '.planning', 'phases', '01-test', '01-02-PLAN.md'), '# Plan 2\n');
+  await fs.writeFile(path.join(gsdTestDir, '.planning', 'phases', '01-test', '01-02-SUMMARY.md'), '# Summary 2\n');
+
+  // 02-wip: 2 PLANs, 0 SUMMARYs
+  await fs.writeFile(path.join(gsdTestDir, '.planning', 'phases', '02-wip', '02-01-PLAN.md'), '# Plan 1\n');
+  await fs.writeFile(path.join(gsdTestDir, '.planning', 'phases', '02-wip', '02-02-PLAN.md'), '# Plan 2\n');
+});
+
+after(async () => {
+  await fs.rm(gsdTestDir, { recursive: true, force: true });
+});
+
+// parseStateMd tests
+test('DASH-02: parseStateMd returns object with status and progress for valid frontmatter', () => {
+  const content = [
+    '---',
+    'status: Phase 4.5 context gathered',
+    'progress:',
+    '  percent: 43',
+    '---',
+    '# Content',
+  ].join('\n');
+  const result = parseStateMd(content);
+  assert.ok(result, 'parseStateMd should return non-null for valid frontmatter');
+  assert.equal(result.status, 'Phase 4.5 context gathered');
+  assert.ok(result.progress, 'result should have progress object');
+  assert.equal(result.progress.percent, '43');
+});
+
+test('DASH-02: parseStateMd returns null for content with no frontmatter', () => {
+  const result = parseStateMd('no frontmatter here');
+  assert.equal(result, null);
+});
+
+// parsePhaseDir tests
+test('DASH-03: parsePhaseDir parses integer phase directory names', () => {
+  const result = parsePhaseDir('01-foundation');
+  assert.ok(result, 'should parse 01-foundation');
+  assert.equal(result.num, 1);
+  assert.equal(result.numStr, '01');
+  assert.equal(result.slug, 'foundation');
+  assert.equal(result.dir, '01-foundation');
+});
+
+test('DASH-03: parsePhaseDir parses decimal phase directory names', () => {
+  const result = parsePhaseDir('04.5-gsd-dashboard');
+  assert.ok(result, 'should parse 04.5-gsd-dashboard');
+  assert.equal(result.num, 4.5);
+  assert.equal(result.numStr, '04.5');
+  assert.equal(result.slug, 'gsd-dashboard');
+  assert.equal(result.dir, '04.5-gsd-dashboard');
+});
+
+test('DASH-03: parsePhaseDir returns null for invalid directory names', () => {
+  const result = parsePhaseDir('invalid');
+  assert.equal(result, null);
+});
+
+// getPhaseInfo tests
+test('DASH-03: getPhaseInfo returns complete for dir with 2 PLANs and 2 SUMMARYs', async () => {
+  const phaseDir = path.join(gsdTestDir, '.planning', 'phases', '01-test');
+  const info = await getPhaseInfo(phaseDir);
+  assert.ok(info, 'getPhaseInfo should return non-null');
+  assert.equal(info.status, 'complete');
+  assert.equal(info.planCount, 2);
+  assert.equal(info.completedPlans, 2);
+});
+
+test('DASH-03: getPhaseInfo returns in-progress for dir with 2 PLANs and 0 SUMMARYs', async () => {
+  const phaseDir = path.join(gsdTestDir, '.planning', 'phases', '02-wip');
+  const info = await getPhaseInfo(phaseDir);
+  assert.ok(info, 'getPhaseInfo should return non-null');
+  assert.equal(info.status, 'in-progress');
+  assert.equal(info.planCount, 2);
+  assert.equal(info.completedPlans, 0);
+});
+
+test('DASH-03: getPhaseInfo returns pending for empty dir with no plans', async () => {
+  const emptyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-empty-phase-'));
+  try {
+    const info = await getPhaseInfo(emptyDir);
+    assert.ok(info, 'getPhaseInfo should return non-null for empty dir');
+    assert.equal(info.status, 'pending');
+    assert.equal(info.planCount, 0);
+    assert.equal(info.completedPlans, 0);
+  } finally {
+    await fs.rm(emptyDir, { recursive: true, force: true });
+  }
+});
+
+test('DASH-03: getPhaseInfo returns complete for dir with VERIFICATION.md', async () => {
+  const verifyDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-verify-phase-'));
+  try {
+    await fs.writeFile(path.join(verifyDir, '01-01-PLAN.md'), '# Plan\n');
+    await fs.writeFile(path.join(verifyDir, '01-VERIFICATION.md'), '# Verification\n');
+    const info = await getPhaseInfo(verifyDir);
+    assert.ok(info, 'getPhaseInfo should return non-null');
+    assert.equal(info.status, 'complete');
+  } finally {
+    await fs.rm(verifyDir, { recursive: true, force: true });
+  }
+});
+
+// isValidBranchName tests
+test('DASH-05: isValidBranchName returns true for valid branch names', () => {
+  assert.equal(isValidBranchName('main'), true);
+  assert.equal(isValidBranchName('feature/my-branch'), true);
+  assert.equal(isValidBranchName('release-1.0'), true);
+});
+
+test('DASH-05: isValidBranchName returns false for dangerous branch names', () => {
+  assert.equal(isValidBranchName('feat; rm -rf /'), false);
+  assert.equal(isValidBranchName('branch && evil'), false);
+  assert.equal(isValidBranchName(''), false);
 });

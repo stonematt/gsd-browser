@@ -2,11 +2,15 @@
 
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { execFile } = require('node:child_process');
+const { promisify } = require('node:util');
 const Fastify = require('fastify');
 const mime = require('mime-types');
 const { isPathAllowed, readFileIfAllowed } = require('./filesystem.js');
 const { initRenderer, renderMarkdown, buildPage } = require('./renderer.js');
 const { enrichSourcesWithConventions, addSource, removeSource, listSources, loadConfig, saveConfig } = require('./sources.js');
+
+const execFileAsync = promisify(execFile);
 
 // CSP header value — defined as a named constant for easy Phase 4 update
 // Phase 4: change script-src 'none' to script-src 'self' when adding frontend JS
@@ -17,6 +21,236 @@ const MANAGEMENT_CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; s
 
 // Directories treated as "convention" directories (sorted first, flagged with convention: true)
 const CONVENTION_DIRS = new Set(['.planning', 'docs']);
+
+// ============================================================
+// Phase 4.5: GSD Dashboard helper functions
+// ============================================================
+
+/**
+ * Parse GSD STATE.md frontmatter.
+ * Returns null if no frontmatter found.
+ * Handles two-level YAML nesting (top-level keys + indented sub-keys like progress:).
+ *
+ * @param {string} content - File content
+ * @returns {object|null}
+ */
+function parseStateMd(content) {
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return null;
+
+  const yaml = match[1];
+  const lines = yaml.split('\n');
+  const result = {};
+  let currentKey = null;
+
+  for (const line of lines) {
+    if (line.match(/^\s+/)) {
+      // Indented sub-key
+      const m = line.match(/^\s+(\w+):\s*(.+)/);
+      if (m && currentKey) {
+        if (typeof result[currentKey] !== 'object') result[currentKey] = {};
+        result[currentKey][m[1]] = m[2].trim();
+      }
+    } else {
+      const m = line.match(/^(\w[\w_]*):\s*(.*)/);
+      if (m) {
+        currentKey = m[1];
+        const val = m[2].replace(/^["']|["']$/g, '');
+        result[currentKey] = val || {};
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Parse a GSD phase directory name like '01-foundation' or '04.5-gsd-dashboard'.
+ *
+ * @param {string} dirName
+ * @returns {{ num: number, numStr: string, slug: string, dir: string }|null}
+ */
+function parsePhaseDir(dirName) {
+  const m = dirName.match(/^(\d+(?:\.\d+)?)-(.+)$/);
+  if (!m) return null;
+  return {
+    num: parseFloat(m[1]),
+    numStr: m[1],
+    slug: m[2],
+    dir: dirName,
+  };
+}
+
+/**
+ * Get phase status info by scanning a phase directory for PLAN.md, SUMMARY.md, VERIFICATION.md files.
+ *
+ * @param {string} phaseDirPath - Absolute path to a phase directory
+ * @returns {Promise<{ planCount: number, completedPlans: number, status: string, files: string[] }|null>}
+ */
+async function getPhaseInfo(phaseDirPath) {
+  let entries;
+  try {
+    entries = await fs.readdir(phaseDirPath);
+  } catch {
+    return null;
+  }
+
+  const plans = entries.filter(f => /\d+-\d+-PLAN\.md$/.test(f));
+  const summaries = entries.filter(f => /\d+-\d+-SUMMARY\.md$/.test(f));
+  const hasVerification = entries.some(f => f.endsWith('-VERIFICATION.md'));
+
+  let status;
+  if (hasVerification || (plans.length > 0 && summaries.length >= plans.length)) {
+    status = 'complete';
+  } else if (plans.length > 0) {
+    status = 'in-progress';
+  } else {
+    status = 'pending';
+  }
+
+  return {
+    planCount: plans.length,
+    completedPlans: summaries.length,
+    status,
+    files: entries,
+  };
+}
+
+/**
+ * Validate a git branch name — reject anything with shell metacharacters.
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+function isValidBranchName(name) {
+  if (!name) return false;
+  return /^[a-zA-Z0-9._\-/]+$/.test(name);
+}
+
+/**
+ * List git branches that have a .planning/STATE.md file.
+ * Returns [] for non-git directories or on any failure.
+ *
+ * @param {string} repoPath - Absolute path to git repository
+ * @returns {Promise<string[]>}
+ */
+async function getBranchesWithPlanning(repoPath) {
+  try {
+    const { stdout } = await execFileAsync('git', ['-C', repoPath, 'branch', '--format=%(refname:short)']);
+    const branches = stdout.split('\n').filter(Boolean);
+    const withPlanning = [];
+    for (const branch of branches) {
+      try {
+        await execFileAsync('git', ['-C', repoPath, 'cat-file', '-e', `${branch}:.planning/STATE.md`]);
+        withPlanning.push(branch);
+      } catch { /* not found on this branch */ }
+    }
+    return withPlanning;
+  } catch {
+    return []; // Not a repo or git unavailable
+  }
+}
+
+/**
+ * Read a file from a specific git branch.
+ *
+ * @param {string} repoPath
+ * @param {string} branch
+ * @param {string} filePath
+ * @returns {Promise<string|null>}
+ */
+async function readFileFromBranch(repoPath, branch, filePath) {
+  if (!isValidBranchName(branch)) return null;
+  try {
+    const { stdout } = await execFileAsync(
+      'git', ['-C', repoPath, 'show', `${branch}:${filePath}`],
+      { maxBuffer: 1024 * 1024 }
+    );
+    return stdout;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * List directory entries from a specific git branch.
+ *
+ * @param {string} repoPath
+ * @param {string} branch
+ * @param {string} dirPath
+ * @returns {Promise<string[]>}
+ */
+async function listDirFromBranch(repoPath, branch, dirPath) {
+  if (!isValidBranchName(branch)) return [];
+  try {
+    const { stdout } = await execFileAsync('git', ['-C', repoPath, 'ls-tree', '--name-only', `${branch}:${dirPath}`]);
+    return stdout.split('\n').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Build a list of phase objects from a source's .planning/phases/ directory.
+ * Sorted by numeric phase number.
+ *
+ * @param {string} sourcePath
+ * @returns {Promise<Array>}
+ */
+async function buildPhaseList(sourcePath) {
+  const phasesDir = path.join(sourcePath, '.planning', 'phases');
+  let dirs;
+  try {
+    dirs = await fs.readdir(phasesDir);
+  } catch {
+    return [];
+  }
+
+  const phases = [];
+  for (const dir of dirs) {
+    const parsed = parsePhaseDir(dir);
+    if (!parsed) continue;
+    const info = await getPhaseInfo(path.join(phasesDir, dir));
+    if (!info) continue;
+    phases.push({
+      num: parsed.num,
+      numStr: parsed.numStr,
+      slug: parsed.slug,
+      status: info.status,
+      planCount: info.planCount,
+      completedPlans: info.completedPlans,
+    });
+  }
+
+  // Sort by numeric phase number (handles 04.5 correctly)
+  phases.sort((a, b) => a.num - b.num);
+  return phases;
+}
+
+/**
+ * Build quick-links array for a source's key planning files.
+ * Checks file existence so client can conditionally show links.
+ *
+ * @param {string} sourcePath
+ * @returns {Promise<Array<{ name: string, path: string, exists: boolean }>>}
+ */
+async function buildQuickLinks(sourcePath) {
+  const links = [
+    { name: 'PROJECT.md', path: '.planning/PROJECT.md' },
+    { name: 'STATE.md', path: '.planning/STATE.md' },
+    { name: 'ROADMAP.md', path: '.planning/ROADMAP.md' },
+  ];
+
+  const result = [];
+  for (const link of links) {
+    let exists = false;
+    try {
+      await fs.access(path.join(sourcePath, link.path));
+      exists = true;
+    } catch { /* file doesn't exist */ }
+    result.push({ name: link.name, path: link.path, exists });
+  }
+  return result;
+}
 
 /**
  * buildTree(dirPath, relBase) — recursively build a JSON tree of .md files.
@@ -544,4 +778,4 @@ async function start(port, sources, options = {}) {
   return fastify;
 }
 
-module.exports = { start, createServer };
+module.exports = { start, createServer, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName };

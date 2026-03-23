@@ -576,6 +576,147 @@ function createServer(sources) {
     return reply.code(400).send({ error: result.message || 'Failed to remove source' });
   });
 
+  // ============================================================
+  // Phase 4.5: GSD Dashboard API endpoints
+  // ============================================================
+
+  // GET /api/dashboard — aggregate GSD project data for all registered sources
+  fastify.get('/api/dashboard', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    // Use activeSources (closure) for consistency with tree/file endpoints.
+    // activeSources is refreshed on add/remove via POST/DELETE /api/sources.
+    const allSources = activeSources;
+    const projects = [];
+    const other = [];
+
+    for (const source of allSources) {
+      if (!source.available) continue;
+
+      // Check for GSD artifact — presence of .planning/STATE.md
+      const statePath = path.join(source.path, '.planning', 'STATE.md');
+      let stateContent = null;
+      try {
+        stateContent = await fs.readFile(statePath, 'utf8');
+      } catch { /* not a GSD project */ }
+
+      if (!stateContent) {
+        other.push({ name: source.name, path: source.path });
+        continue;
+      }
+
+      const state = parseStateMd(stateContent);
+      const phases = await buildPhaseList(source.path);
+      const quickLinks = await buildQuickLinks(source.path);
+
+      projects.push({
+        name: source.name,
+        path: source.path,
+        isGsd: true,
+        progress: {
+          percent: parseInt(state && state.progress && state.progress.percent ? state.progress.percent : 0),
+          completed_phases: parseInt(state && state.progress && state.progress.completed_phases ? state.progress.completed_phases : 0),
+          total_phases: parseInt(state && state.progress && state.progress.total_phases ? state.progress.total_phases : 0),
+        },
+        currentFocus: (state && state.status) ? state.status : '',
+        lastActivity: (state && state.last_activity) ? state.last_activity : '',
+        milestone: (state && state.milestone) ? state.milestone : '',
+        quickLinks,
+        phaseStatus: phases,
+      });
+    }
+
+    return reply.send({ projects, other });
+  });
+
+  // GET /api/projects/:name/detail — detailed project info including phases and branches
+  fastify.get('/api/projects/:name/detail', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const sourceName = request.params.name;
+    const source = activeSources.find(s => s.name === sourceName);
+
+    if (!source) {
+      return reply.code(404).send({ error: `Source not found: ${sourceName}` });
+    }
+
+    const branch = request.query.branch;
+    let state = null;
+    let phases = [];
+
+    if (branch && isValidBranchName(branch)) {
+      // Read from the specified branch via git
+      const stateContent = await readFileFromBranch(source.path, branch, '.planning/STATE.md');
+      if (stateContent) {
+        state = parseStateMd(stateContent);
+      }
+      // List phase dirs from the branch
+      const phaseDirEntries = await listDirFromBranch(source.path, branch, '.planning/phases');
+      for (const dir of phaseDirEntries) {
+        const parsed = parsePhaseDir(dir);
+        if (!parsed) continue;
+        // Count plan/summary files from git ls-tree
+        const phaseFiles = await listDirFromBranch(source.path, branch, `.planning/phases/${dir}`);
+        const planCount = phaseFiles.filter(f => /\d+-\d+-PLAN\.md$/.test(f)).length;
+        const completedPlans = phaseFiles.filter(f => /\d+-\d+-SUMMARY\.md$/.test(f)).length;
+        const hasVerification = phaseFiles.some(f => f.endsWith('-VERIFICATION.md'));
+        let status;
+        if (hasVerification || (planCount > 0 && completedPlans >= planCount)) {
+          status = 'complete';
+        } else if (planCount > 0) {
+          status = 'in-progress';
+        } else {
+          status = 'pending';
+        }
+        phases.push({ num: parsed.num, numStr: parsed.numStr, slug: parsed.slug, status, planCount, completedPlans });
+      }
+      phases.sort((a, b) => a.num - b.num);
+    } else {
+      // Read from filesystem directly
+      const statePath = path.join(source.path, '.planning', 'STATE.md');
+      try {
+        const stateContent = await fs.readFile(statePath, 'utf8');
+        state = parseStateMd(stateContent);
+      } catch { /* no STATE.md */ }
+      phases = await buildPhaseList(source.path);
+    }
+
+    // Get branches on-demand (per CONTEXT.md decision — only in detail, not dashboard)
+    const branches = await getBranchesWithPlanning(source.path);
+
+    return reply.send({
+      source: { name: source.name, path: source.path },
+      state,
+      phases,
+      branch: branch || null,
+      branches,
+    });
+  });
+
+  // GET /api/projects/:name/branches — list branches with .planning/STATE.md
+  fastify.get('/api/projects/:name/branches', {
+    onSend: async (request, reply, payload) => {
+      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
+      return payload;
+    }
+  }, async (request, reply) => {
+    const sourceName = request.params.name;
+    const source = activeSources.find(s => s.name === sourceName);
+
+    if (!source) {
+      return reply.code(404).send({ error: `Source not found: ${sourceName}` });
+    }
+
+    const branches = await getBranchesWithPlanning(source.path);
+    return reply.send({ branches });
+  });
+
   // GET /sources — serve the management page (explicit route shadows static for this path)
   fastify.get('/sources', {
     onSend: async (request, reply, payload) => {

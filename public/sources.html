@@ -116,6 +116,60 @@
       background: rgba(248, 81, 73, 0.1);
     }
 
+    button.edit {
+      background: transparent;
+      border-color: #58a6ff;
+      color: #58a6ff;
+      font-size: 12px;
+      padding: 4px 10px;
+      margin-right: 6px;
+    }
+
+    button.edit:hover {
+      background: rgba(88, 166, 255, 0.1);
+    }
+
+    /* Edit modal */
+    .modal-overlay {
+      background: rgba(0, 0, 0, 0.7);
+      bottom: 0;
+      display: none;
+      left: 0;
+      position: fixed;
+      right: 0;
+      top: 0;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 24px;
+      min-width: 400px;
+    }
+
+    .modal h2 {
+      margin-bottom: 16px;
+    }
+
+    .modal .field {
+      margin-bottom: 12px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
     /* Sources table */
     table {
       width: 100%;
@@ -249,6 +303,25 @@
     </div>
   </section>
 
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <h2>Edit Source</h2>
+      <input type="hidden" id="edit-original-name">
+      <div class="field">
+        <label for="edit-name">Name</label>
+        <input type="text" id="edit-name">
+      </div>
+      <div class="field">
+        <label for="edit-path">Path</label>
+        <input type="text" id="edit-path">
+      </div>
+      <div class="modal-actions">
+        <button id="cancel-edit">Cancel</button>
+        <button class="primary" id="save-edit">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const pathInput = document.getElementById('path-input');
     const nameInput = document.getElementById('name-input');
@@ -299,7 +372,10 @@
           <td><span class="source-path">${safePath}</span></td>
           <td>${statusBadge}</td>
           <td>${conventions}</td>
-          <td><button class="danger" data-name="${safeName}">Remove</button></td>
+          <td>
+            <button class="edit" data-name="${safeName}" data-path="${safePath}">Edit</button>
+            <button class="danger" data-name="${safeName}">Remove</button>
+          </td>
         </tr>`;
       }).join('');
 
@@ -321,7 +397,82 @@
       sourcesContainer.querySelectorAll('button.danger').forEach(btn => {
         btn.addEventListener('click', () => removeSource(btn.dataset.name));
       });
+
+      sourcesContainer.querySelectorAll('button.edit').forEach(btn => {
+        btn.addEventListener('click', () => openEditModal(btn.dataset.name, btn.dataset.path));
+      });
     }
+
+    const editModal = document.getElementById('edit-modal');
+    const editNameInput = document.getElementById('edit-name');
+    const editPathInput = document.getElementById('edit-path');
+    const editOriginalName = document.getElementById('edit-original-name');
+    const cancelEditBtn = document.getElementById('cancel-edit');
+    const saveEditBtn = document.getElementById('save-edit');
+
+    function openEditModal(name, path) {
+      editOriginalName.value = name;
+      editNameInput.value = name;
+      editPathInput.value = path;
+      editModal.classList.add('active');
+      editNameInput.focus();
+    }
+
+    function closeEditModal() {
+      editModal.classList.remove('active');
+    }
+
+    cancelEditBtn.addEventListener('click', closeEditModal);
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) closeEditModal();
+    });
+
+    saveEditBtn.addEventListener('click', async () => {
+      const originalName = editOriginalName.value;
+      const newName = editNameInput.value.trim();
+      const newPath = editPathInput.value.trim();
+
+      if (!newName && !newPath) {
+        showStatus('Provide name or path to update.', true);
+        return;
+      }
+
+      saveEditBtn.disabled = true;
+      saveEditBtn.textContent = 'Saving...';
+
+      try {
+        const body = {};
+        if (newName) body.name = newName;
+        if (newPath) body.path = newPath;
+
+        const res = await fetch('/api/sources/' + encodeURIComponent(originalName), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showStatus('Updated: ' + data.source.name, false);
+          closeEditModal();
+          await loadSources();
+        } else {
+          showStatus(data.error || 'Failed to update (HTTP ' + res.status + ')', true);
+        }
+      } catch (err) {
+        showStatus('Network error: ' + err.message, true);
+      } finally {
+        saveEditBtn.disabled = false;
+        saveEditBtn.textContent = 'Save';
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && editModal.classList.contains('active')) {
+        closeEditModal();
+      }
+    });
 
     function escapeHtml(str) {
       return String(str)

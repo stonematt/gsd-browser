@@ -41,6 +41,7 @@ key-files:
   modified:
     - public/index.html
     - test/server.test.js
+    - src/server.js
 
 key-decisions:
   - "Single-file SPA with inline <style> and <script> — follows established pattern from sources.html, no build tooling needed"
@@ -48,6 +49,7 @@ key-decisions:
   - "history.replaceState (not pushState) for initial load and source switches — keeps back/forward clean"
   - "CSS.escape() in setActiveFile querySelector — safe for filenames with special chars"
   - "Convention dirs start expanded, non-convention start collapsed — matches user mental model"
+  - "node_modules excluded from buildTree() scan — prevents scanning thousands of npm files in repos with dependencies"
 
 patterns-established:
   - "Three-panel grid pattern: reusable for dashboard and other multi-pane layouts"
@@ -56,7 +58,7 @@ patterns-established:
 requirements-completed: [NAV-01, NAV-02, NAV-03, DSGN-01, DSGN-02]
 
 # Metrics
-duration: 1min
+duration: ~45min (including human verification)
 completed: 2026-03-22
 ---
 
@@ -66,11 +68,11 @@ completed: 2026-03-22
 
 ## Performance
 
-- **Duration:** 1 min
+- **Duration:** ~45 min (including human verification checkpoint)
 - **Started:** 2026-03-22T15:22:03Z
-- **Completed:** 2026-03-22T15:23:57Z
-- **Tasks:** 1 of 2 (Task 2 is human-verify checkpoint — awaiting manual browser verification)
-- **Files modified:** 2
+- **Completed:** 2026-03-22
+- **Tasks:** 2 of 2 (Task 1 auto + Task 2 human-verify checkpoint — approved)
+- **Files modified:** 3
 
 ## Accomplishments
 
@@ -90,13 +92,13 @@ completed: 2026-03-22
 Each task was committed atomically:
 
 1. **Task 1: Build the three-panel SPA shell** - `da5ef72` (feat)
-
-**Plan metadata:** (pending — will be committed after checkpoint)
+2. **Post-verify fix: Exclude node_modules from buildTree()** - `9d176af` (fix)
 
 ## Files Created/Modified
 
 - `public/index.html` — Complete SPA rewrite: CSS Grid layout, file tree, source switcher, hash routing, content pane
 - `test/server.test.js` — 6 new NAV-03 smoke tests for SPA HTML structure
+- `src/server.js` — Added `node_modules` exclusion in `buildTree()` recursive scan
 
 ## Decisions Made
 
@@ -108,11 +110,24 @@ Each task was committed atomically:
 
 ## Deviations from Plan
 
-None — plan executed exactly as written.
+### Auto-fixed Issues (post human-verify)
+
+**1. [Rule 1 - Bug] Excluded node_modules from buildTree() scan**
+- **Found during:** Human verification (Task 2 checkpoint — discovered during live browser session with this repo registered as a source)
+- **Issue:** `buildTree()` recursed into `node_modules` when the registered source had one, causing very slow tree loads and surfacing package README files as browsable content
+- **Fix:** Added `if (entry === 'node_modules') continue;` in the directory iteration loop in `buildTree()`
+- **Files modified:** `src/server.js`
+- **Verification:** All 56 tests still pass after fix
+- **Committed in:** `9d176af` (post-verify fix commit)
+
+---
+
+**Total deviations:** 1 auto-fixed post-verify (Rule 1 — bug discovered during live browser verification)
+**Impact on plan:** Essential correctness fix — repos with `node_modules` would have had severely degraded tree performance without this patch.
 
 ## Issues Encountered
 
-None.
+None beyond the `node_modules` deviation documented above.
 
 ## User Setup Required
 
@@ -120,9 +135,11 @@ None — no external service configuration required.
 
 ## Next Phase Readiness
 
-- SPA shell is built and all automated tests pass
-- **Awaiting:** Human browser verification (Task 2 checkpoint) to confirm visual and functional correctness
-- After verification: ready for Phase 4.5 (GSD Dashboard)
+- SPA shell is built, all automated tests pass, and human browser verification complete (all 16 steps passed)
+- Hash routing provides deep-linkable URLs for all file navigation
+- Fragment render API (`/render?fragment=true`) is wired into the content pane
+- Source switcher and file tree are live — ready for Phase 4.5 (GSD Dashboard) or further Phase 4 enhancements
+- `buildTree()` is stable with `node_modules` exclusion — safe to register repos with npm dependencies
 
 ---
 *Phase: 04-browser-ui*

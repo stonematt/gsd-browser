@@ -54,6 +54,8 @@ async function buildTree(dirPath, relBase = '') {
     }
 
     if (stat.isDirectory()) {
+      // Skip node_modules entirely
+      if (entry === 'node_modules') continue;
       const children = await buildTree(absPath, relPath);
       // Omit directories that have no .md descendants at any depth
       if (children.length === 0) continue;

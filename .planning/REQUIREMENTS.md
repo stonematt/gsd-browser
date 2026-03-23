@@ -48,12 +48,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### GSD Dashboard
 
-- [ ] **DASH-01**: Dashboard landing page shows project cards for all registered sources with GSD planning artifacts
-- [ ] **DASH-02**: Each project card displays progress percentage, editorial summary of active work (from STATE.md), and quick-links to key files (PROJECT.md, STATE.md, ROADMAP.md)
-- [ ] **DASH-03**: Project detail page shows horizontal phase timeline with completed/in-progress/pending status
+- [x] **DASH-01**: Dashboard landing page shows project cards for all registered sources with GSD planning artifacts
+- [x] **DASH-02**: Each project card displays progress percentage, editorial summary of active work (from STATE.md), and quick-links to key files (PROJECT.md, STATE.md, ROADMAP.md)
+- [x] **DASH-03**: Project detail page shows horizontal phase timeline with completed/in-progress/pending status
 - [ ] **DASH-04**: Clicking a phase in the timeline shows that phase's documentation (plans, summaries, research, validation) with rendered content
-- [ ] **DASH-05**: Branch-aware progress — for git repos with multiple branches containing `.planning/`, show per-branch milestone progress
-- [ ] **DASH-06**: Non-GSD sources (no `.planning/STATE.md`) appear on dashboard with graceful fallback to file browser
+- [x] **DASH-05**: Branch-aware progress — for git repos with multiple branches containing `.planning/`, show per-branch milestone progress
+- [x] **DASH-06**: Non-GSD sources (no `.planning/STATE.md`) appear on dashboard with graceful fallback to file browser
 
 ### Distribution
 
@@ -124,12 +124,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-02 | Phase 2 | Complete |
 | DSGN-01 | Phase 4 | Complete |
 | DSGN-02 | Phase 4 | Complete |
-| DASH-01 | Phase 4.5 | Pending |
-| DASH-02 | Phase 4.5 | Pending |
-| DASH-03 | Phase 4.5 | Pending |
+| DASH-01 | Phase 4.5 | Complete |
+| DASH-02 | Phase 4.5 | Complete |
+| DASH-03 | Phase 4.5 | Complete |
 | DASH-04 | Phase 4.5 | Pending |
-| DASH-05 | Phase 4.5 | Pending |
-| DASH-06 | Phase 4.5 | Pending |
+| DASH-05 | Phase 4.5 | Complete |
+| DASH-06 | Phase 4.5 | Complete |
 | DIST-01 | Phase 6 | Pending |
 | DIST-02 | Phase 6 | Pending |
 

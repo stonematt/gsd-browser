@@ -134,6 +134,31 @@ test('E2E: server serves /api/sources, /sources page, /file', async () => {
   }
 });
 
+test('E2E: GET /api/dashboard returns 200 with projects and other arrays', async () => {
+  await addSource(PROJECT_ROOT, { name: 'e2e-dash-test' }, configPath);
+  const sources = await listSources(configPath);
+
+  const server = await start(0, sources, { open: false });
+  const addr = server.server.address();
+  const base = `http://127.0.0.1:${addr.port}`;
+
+  try {
+    const res = await fetch(`${base}/api/dashboard`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.ok(Array.isArray(body.projects), 'body.projects should be an array');
+    assert.ok(Array.isArray(body.other), 'body.other should be an array');
+    // This repo has .planning/STATE.md, so it should appear in projects
+    const found = body.projects.find(p => p.name === 'e2e-dash-test');
+    assert.ok(found, 'e2e-dash-test project should be in projects array');
+    assert.equal(found.isGsd, true);
+    assert.ok(found.progress, 'project should have progress data');
+  } finally {
+    await server.close();
+    await removeSource('e2e-dash-test', configPath);
+  }
+});
+
 test('E2E: POST and DELETE /api/sources work', async () => {
   // Point the server's API routes at our temp config
   const origXdg = process.env.XDG_CONFIG_HOME;

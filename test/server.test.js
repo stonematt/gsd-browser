@@ -914,3 +914,211 @@ test('DASH-05: isValidBranchName returns false for dangerous branch names', () =
   assert.equal(isValidBranchName('branch && evil'), false);
   assert.equal(isValidBranchName(''), false);
 });
+
+// ============================================================
+// Phase 4.5 Plan 01 - Task 2: API endpoints (TDD)
+// ============================================================
+
+// More complete GSD fixture for endpoint tests
+let gsdSourceDir;   // GSD source: has .planning/STATE.md
+let nonGsdSourceDir; // Non-GSD source: no .planning dir
+
+before(async () => {
+  gsdSourceDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-api-test-'));
+  nonGsdSourceDir = await fs.mkdtemp(path.join(os.tmpdir(), 'gsd-nongsd-test-'));
+
+  // GSD source: full .planning structure
+  const stateMdContent = [
+    '---',
+    'gsd_state_version: 1.0',
+    'milestone: v1.0',
+    'milestone_name: milestone',
+    'status: Phase 2 context gathered',
+    'stopped_at: Phase 2 context gathered',
+    'last_updated: "2026-03-23T03:42:33.322Z"',
+    'last_activity: 2026-03-21 — Added Phase 2',
+    'progress:',
+    '  total_phases: 3',
+    '  completed_phases: 1',
+    '  total_plans: 4',
+    '  completed_plans: 2',
+    '  percent: 33',
+    '---',
+    '',
+    '# Project State',
+  ].join('\n');
+
+  await fs.mkdir(path.join(gsdSourceDir, '.planning', 'phases', '01-foundation'), { recursive: true });
+  await fs.mkdir(path.join(gsdSourceDir, '.planning', 'phases', '02-wip'), { recursive: true });
+  await fs.writeFile(path.join(gsdSourceDir, '.planning', 'STATE.md'), stateMdContent);
+  await fs.writeFile(path.join(gsdSourceDir, '.planning', 'PROJECT.md'), '# Project\n');
+  await fs.writeFile(path.join(gsdSourceDir, '.planning', 'ROADMAP.md'), '# Roadmap\n');
+
+  // phase 01-foundation: complete (1 plan, 1 summary)
+  await fs.writeFile(path.join(gsdSourceDir, '.planning', 'phases', '01-foundation', '01-01-PLAN.md'), '# Plan\n');
+  await fs.writeFile(path.join(gsdSourceDir, '.planning', 'phases', '01-foundation', '01-01-SUMMARY.md'), '# Summary\n');
+
+  // phase 02-wip: in-progress (1 plan, no summary)
+  await fs.writeFile(path.join(gsdSourceDir, '.planning', 'phases', '02-wip', '02-01-PLAN.md'), '# Plan\n');
+});
+
+after(async () => {
+  await fs.rm(gsdSourceDir, { recursive: true, force: true });
+  await fs.rm(nonGsdSourceDir, { recursive: true, force: true });
+});
+
+// Helper: create server with both sources
+function makeGsdSources(gsdDir) {
+  return [{ name: 'my-project', path: gsdDir, available: true, conventions: [] }];
+}
+
+function makeMixedSources(gsdDir, nonGsdDir) {
+  return [
+    { name: 'my-project', path: gsdDir, available: true, conventions: [] },
+    { name: 'plain-repo', path: nonGsdDir, available: true, conventions: [] },
+  ];
+}
+
+// DASH-01: /api/dashboard with one GSD source
+test('DASH-01: GET /api/dashboard returns { projects, other } with GSD source in projects', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+    assert.equal(response.statusCode, 200);
+    const body = JSON.parse(response.body);
+    assert.ok(Array.isArray(body.projects), 'body.projects should be an array');
+    assert.ok(Array.isArray(body.other), 'body.other should be an array');
+    assert.equal(body.projects.length, 1, 'should have 1 GSD project');
+    assert.equal(body.other.length, 0, 'should have 0 non-GSD sources');
+    await fastify.close();
+  });
+});
+
+test('DASH-01: GSD project entry has isGsd, progress, phaseStatus, quickLinks fields', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+    const body = JSON.parse(response.body);
+    const project = body.projects[0];
+    assert.equal(project.isGsd, true);
+    assert.ok(project.progress, 'project should have progress object');
+    assert.ok(Array.isArray(project.phaseStatus), 'project should have phaseStatus array');
+    assert.ok(Array.isArray(project.quickLinks), 'project should have quickLinks array');
+    await fastify.close();
+  });
+});
+
+test('DASH-02: GSD project quickLinks includes files that exist', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+    const body = JSON.parse(response.body);
+    const project = body.projects[0];
+    const stateLink = project.quickLinks.find(l => l.name === 'STATE.md');
+    assert.ok(stateLink, 'quickLinks should include STATE.md');
+    assert.equal(stateLink.exists, true, 'STATE.md should exist');
+    await fastify.close();
+  });
+});
+
+// DASH-06: non-GSD source in other array
+test('DASH-06: GET /api/dashboard with non-GSD source returns it in other array', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer([
+      { name: 'plain-repo', path: nonGsdSourceDir, available: true, conventions: [] }
+    ]);
+    const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+    assert.equal(response.statusCode, 200);
+    const body = JSON.parse(response.body);
+    assert.equal(body.projects.length, 0, 'should have 0 GSD projects');
+    assert.equal(body.other.length, 1, 'should have 1 non-GSD source');
+    assert.equal(body.other[0].name, 'plain-repo');
+    await fastify.close();
+  });
+});
+
+test('DASH-06: GET /api/dashboard with mixed sources returns both in correct arrays', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeMixedSources(gsdSourceDir, nonGsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+    assert.equal(response.statusCode, 200);
+    const body = JSON.parse(response.body);
+    assert.equal(body.projects.length, 1, 'should have 1 GSD project');
+    assert.equal(body.other.length, 1, 'should have 1 non-GSD source');
+    await fastify.close();
+  });
+});
+
+// DASH-01/DASH-03: CSP header on /api/dashboard
+test('DASH-01: GET /api/dashboard has MANAGEMENT_CSP header', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+    const csp = response.headers['content-security-policy'];
+    assert.ok(csp, 'CSP header should be present');
+    assert.ok(csp.includes("'unsafe-inline'"), `dashboard should have MANAGEMENT_CSP, got: ${csp}`);
+    await fastify.close();
+  });
+});
+
+// DASH-03: /api/projects/:name/detail
+test('DASH-03: GET /api/projects/:name/detail returns { source, state, phases, branch, branches }', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/projects/my-project/detail' });
+    assert.equal(response.statusCode, 200);
+    const body = JSON.parse(response.body);
+    assert.ok(body.source, 'should have source');
+    assert.ok(body.state !== undefined, 'should have state field');
+    assert.ok(Array.isArray(body.phases), 'should have phases array');
+    await fastify.close();
+  });
+});
+
+test('DASH-03: detail phases array has correct status per phase', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/projects/my-project/detail' });
+    const body = JSON.parse(response.body);
+    const phases = body.phases;
+    const foundation = phases.find(p => p.slug === 'foundation');
+    const wip = phases.find(p => p.slug === 'wip');
+    assert.ok(foundation, '01-foundation phase should be present');
+    assert.equal(foundation.status, 'complete', '01-foundation should be complete');
+    assert.ok(wip, '02-wip phase should be present');
+    assert.equal(wip.status, 'in-progress', '02-wip should be in-progress');
+    await fastify.close();
+  });
+});
+
+test('DASH-03: GET /api/projects/nonexistent/detail returns 404', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/projects/nonexistent/detail' });
+    assert.equal(response.statusCode, 404);
+    await fastify.close();
+  });
+});
+
+// DASH-05: /api/projects/:name/branches
+test('DASH-05: GET /api/projects/:name/branches returns { branches: [] } for non-git directory', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/projects/my-project/branches' });
+    assert.equal(response.statusCode, 200);
+    const body = JSON.parse(response.body);
+    assert.ok(Array.isArray(body.branches), 'branches should be an array');
+    // gsdSourceDir is not a git repo, so should return []
+    assert.equal(body.branches.length, 0, 'should return empty array for non-git dir');
+    await fastify.close();
+  });
+});
+
+test('DASH-05: GET /api/projects/nonexistent/branches returns 404', async () => {
+  await withTempConfig(async () => {
+    const fastify = createServer(makeGsdSources(gsdSourceDir));
+    const response = await fastify.inject({ method: 'GET', url: '/api/projects/nonexistent/branches' });
+    assert.equal(response.statusCode, 404);
+    await fastify.close();
+  });
+});

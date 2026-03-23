@@ -96,7 +96,7 @@ Plans:
   4. Clicking a phase in the timeline shows that phase's documentation (plans, summaries, research, validation) in a sidebar with rendered content pane
   5. For sources that are git repos with multiple branches containing `.planning/`, the dashboard shows per-branch milestone progress (read via `git show <branch>:.planning/STATE.md`)
   6. Non-GSD sources (no `.planning/STATE.md`) still appear on the dashboard but fall back to the file browser view
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 04.5-01-PLAN.md — Server-side API endpoints + parsing utilities (dashboard data, phase detection, git branch operations)
@@ -134,6 +134,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 5 -> 6
 | 2. Rendering | 2/2 | Complete   | 2026-03-13 |
 | 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
 | 4. Browser UI | 2/2 | Complete   | 2026-03-22 |
-| 4.5. GSD Dashboard | 1/3 | In Progress|  |
+| 4.5. GSD Dashboard | 2/3 | In Progress|  |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

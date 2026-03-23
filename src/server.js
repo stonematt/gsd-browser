@@ -64,6 +64,72 @@ function parseStateMd(content) {
 }
 
 /**
+ * Parse ROADMAP.md to extract phase dependency information.
+ * Looks for "### Phase N: Name" headers followed by "**Depends on**: Phase X, Phase Y".
+ *
+ * @param {string} content - ROADMAP.md file content
+ * @returns {Object} Map of phase numStr to array of dependency numStr values
+ */
+function parseRoadmapDeps(content) {
+  const deps = {};
+  const lines = content.split('\n');
+  let currentPhaseNum = null;
+
+  for (const line of lines) {
+    // Match phase headers: ### Phase 1: Foundation  or  ### Phase 4.5: GSD Dashboard (INSERTED)
+    const phaseMatch = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)?)\s*:/);
+    if (phaseMatch) {
+      currentPhaseNum = phaseMatch[1];
+      if (!deps[currentPhaseNum]) deps[currentPhaseNum] = [];
+      continue;
+    }
+
+    // Match dependency lines: **Depends on**: Phase 1  or  **Depends on**: Phase 2, Phase 3
+    if (currentPhaseNum) {
+      const depMatch = line.match(/\*\*Depends on\*\*\s*:\s*(.*)/);
+      if (depMatch) {
+        const depText = depMatch[1].trim();
+        if (!/^nothing/i.test(depText)) {
+          const phaseRefs = depText.match(/Phase\s+(\d+(?:\.\d+)?)/gi) || [];
+          deps[currentPhaseNum] = phaseRefs.map(ref => {
+            const m = ref.match(/(\d+(?:\.\d+)?)/);
+            return m ? m[1] : null;
+          }).filter(Boolean);
+        }
+      }
+    }
+  }
+
+  return deps;
+}
+
+/**
+ * Parse PLAN.md YAML frontmatter for wave and depends_on fields.
+ *
+ * @param {string} content - PLAN.md file content
+ * @returns {{ wave: number|null, dependsOn: string[] }}
+ */
+function parsePlanFrontmatter(content) {
+  const result = { wave: null, dependsOn: [] };
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return result;
+
+  const yaml = match[1];
+  const waveMatch = yaml.match(/^wave:\s*(\d+)/m);
+  if (waveMatch) result.wave = parseInt(waveMatch[1], 10);
+
+  const depsMatch = yaml.match(/^depends_on:\s*\[([^\]]*)\]/m);
+  if (depsMatch) {
+    const raw = depsMatch[1].trim();
+    if (raw) {
+      result.dependsOn = raw.split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Parse a GSD phase directory name like '01-foundation' or '04.5-gsd-dashboard'.
  *
  * @param {string} dirName
@@ -107,11 +173,24 @@ async function getPhaseInfo(phaseDirPath) {
     status = 'pending';
   }
 
+  // Parse plan frontmatter for wave/depends_on info
+  const planDetails = [];
+  for (const planFile of plans) {
+    try {
+      const content = await fs.readFile(path.join(phaseDirPath, planFile), 'utf8');
+      const fm = parsePlanFrontmatter(content);
+      planDetails.push({ file: planFile, wave: fm.wave, dependsOn: fm.dependsOn });
+    } catch {
+      planDetails.push({ file: planFile, wave: null, dependsOn: [] });
+    }
+  }
+
   return {
     planCount: plans.length,
     completedPlans: summaries.length,
     status,
     files: entries,
+    planDetails,
   };
 }
 
@@ -218,6 +297,8 @@ async function buildPhaseList(sourcePath) {
       status: info.status,
       planCount: info.planCount,
       completedPlans: info.completedPlans,
+      files: info.files,
+      planDetails: info.planDetails || [],
     });
   }
 
@@ -235,6 +316,7 @@ async function buildPhaseList(sourcePath) {
  */
 async function buildQuickLinks(sourcePath) {
   const links = [
+    { name: 'README.md', path: 'README.md' },
     { name: 'PROJECT.md', path: '.planning/PROJECT.md' },
     { name: 'STATE.md', path: '.planning/STATE.md' },
     { name: 'ROADMAP.md', path: '.planning/ROADMAP.md' },
@@ -612,6 +694,25 @@ function createServer(sources) {
       const phases = await buildPhaseList(source.path);
       const quickLinks = await buildQuickLinks(source.path);
 
+      // Parse ROADMAP.md for phase dependencies
+      let dependencies = {};
+      try {
+        const roadmapPath = path.join(source.path, '.planning', 'ROADMAP.md');
+        const roadmapContent = await fs.readFile(roadmapPath, 'utf8');
+        dependencies = parseRoadmapDeps(roadmapContent);
+      } catch { /* no ROADMAP.md */ }
+
+      // Attach dependsOn to each phase from the roadmap deps map
+      for (const phase of phases) {
+        phase.dependsOn = dependencies[phase.numStr] || [];
+      }
+
+      // Derive current phase name from phases array
+      const activePhase = phases.find(p => p.status === 'in-progress');
+      const currentPhaseName = activePhase
+        ? 'Phase ' + activePhase.numStr + ': ' + activePhase.slug
+        : '';
+
       projects.push({
         name: source.name,
         path: source.path,
@@ -621,11 +722,13 @@ function createServer(sources) {
           completed_phases: parseInt(state && state.progress && state.progress.completed_phases ? state.progress.completed_phases : 0),
           total_phases: parseInt(state && state.progress && state.progress.total_phases ? state.progress.total_phases : 0),
         },
+        currentPhase: currentPhaseName,
         currentFocus: (state && state.status) ? state.status : '',
         lastActivity: (state && state.last_activity) ? state.last_activity : '',
         milestone: (state && state.milestone) ? state.milestone : '',
         quickLinks,
         phaseStatus: phases,
+        dependencies,
       });
     }
 
@@ -674,7 +777,19 @@ function createServer(sources) {
         } else {
           status = 'pending';
         }
-        phases.push({ num: parsed.num, numStr: parsed.numStr, slug: parsed.slug, status, planCount, completedPlans });
+        // Parse plan frontmatter from branch
+        const planFiles = phaseFiles.filter(f => /\d+-\d+-PLAN\.md$/.test(f));
+        const planDetails = [];
+        for (const pf of planFiles) {
+          const planContent = await readFileFromBranch(source.path, branch, `.planning/phases/${dir}/${pf}`);
+          if (planContent) {
+            const fm = parsePlanFrontmatter(planContent);
+            planDetails.push({ file: pf, wave: fm.wave, dependsOn: fm.dependsOn });
+          } else {
+            planDetails.push({ file: pf, wave: null, dependsOn: [] });
+          }
+        }
+        phases.push({ num: parsed.num, numStr: parsed.numStr, slug: parsed.slug, status, planCount, completedPlans, files: phaseFiles, planDetails });
       }
       phases.sort((a, b) => a.num - b.num);
     } else {
@@ -685,6 +800,18 @@ function createServer(sources) {
         state = parseStateMd(stateContent);
       } catch { /* no STATE.md */ }
       phases = await buildPhaseList(source.path);
+    }
+
+    // Parse ROADMAP.md for phase dependencies
+    let dependencies = {};
+    const roadmapSrc = (branch && isValidBranchName(branch))
+      ? await readFileFromBranch(source.path, branch, '.planning/ROADMAP.md')
+      : await fs.readFile(path.join(source.path, '.planning', 'ROADMAP.md'), 'utf8').catch(() => null);
+    if (roadmapSrc) {
+      dependencies = parseRoadmapDeps(roadmapSrc);
+      for (const phase of phases) {
+        phase.dependsOn = dependencies[phase.numStr] || [];
+      }
     }
 
     // Get branches on-demand (per CONTEXT.md decision — only in detail, not dashboard)
@@ -919,4 +1046,4 @@ async function start(port, sources, options = {}) {
   return fastify;
 }
 
-module.exports = { start, createServer, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName };
+module.exports = { start, createServer, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parsePlanFrontmatter };

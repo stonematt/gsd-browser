@@ -199,47 +199,112 @@
       border-color: #58a6ff;
     }
 
+    .project-card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
     .project-card-name {
       font-size: 15px;
       font-weight: 600;
       color: #f0f6fc;
-      margin-bottom: 8px;
     }
 
-    .phase-dots {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
+    .project-card-milestone {
+      font-size: 11px;
+      color: #8b949e;
+      background: #21262d;
+      border-radius: 4px;
+      padding: 1px 8px;
+      flex-shrink: 0;
+    }
+
+    /* Current phase callout */
+    .card-current-phase {
       margin-bottom: 10px;
     }
 
-    .phase-chip {
+    .card-phase-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #58a6ff;
+      margin-bottom: 2px;
+    }
+
+    .card-phase-progress {
+      font-size: 12px;
+      color: #8b949e;
+    }
+
+    .card-phase-activity {
+      font-size: 11px;
+      color: #484f58;
+      margin-top: 2px;
+    }
+
+    /* Mini timeline */
+    .mini-timeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin: 12px 0 10px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .mini-phase {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      flex-shrink: 0;
+    }
+
+    .mini-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
       flex-shrink: 0;
     }
 
-    .phase-chip--complete { background: #3fb950; }
-    .phase-chip--active   { background: #58a6ff; }
-    .phase-chip--pending  { background: #484f58; }
+    .mini-dot--complete { background: #3fb950; }
+    .mini-dot--active {
+      background: #58a6ff;
+      width: 14px;
+      height: 14px;
+      box-shadow: 0 0 6px rgba(88, 166, 255, 0.5);
+    }
+    .mini-dot--pending { background: #484f58; }
 
-    .project-focus {
-      font-size: 12px;
-      color: #c9d1d9;
-      margin-bottom: 6px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .mini-num {
+      font-size: 9px;
+      color: #484f58;
+      line-height: 1;
     }
 
-    .project-activity {
-      font-size: 11px;
-      color: #484f58;
-      margin-bottom: 10px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .mini-phase--active .mini-num {
+      color: #58a6ff;
+      font-weight: 600;
+    }
+
+    .mini-connector {
+      width: 8px;
+      height: 2px;
+      background: #21262d;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 4px;
+    }
+
+    .mini-connector--dep {
+      background: #484f58;
+      height: 2px;
+      background-image: repeating-linear-gradient(
+        90deg, #484f58 0px, #484f58 3px, transparent 3px, transparent 6px
+      );
+      background-color: transparent;
     }
 
     .quick-links {
@@ -455,10 +520,16 @@
     /* Browse content pane                                                  */
     /* ------------------------------------------------------------------ */
 
-    #browse-content {
+    #browse-content-wrapper {
       grid-area: content;
       background: #0d1117;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #browse-content {
+      flex: 1;
       padding: 24px;
     }
 
@@ -523,9 +594,6 @@
       font-weight: 600;
       color: #f0f6fc;
       flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     #branch-bar {
@@ -549,6 +617,7 @@
       font-size: 12px;
       font-family: inherit;
       cursor: pointer;
+      max-width: 200px;
     }
 
     #branch-select:focus {
@@ -583,10 +652,9 @@
       align-items: center;
       gap: 6px;
       cursor: pointer;
-      padding: 4px 8px;
+      padding: 4px 12px;
       border-radius: 6px;
       transition: background 0.1s;
-      min-width: 80px;
     }
 
     .phase-node:hover {
@@ -625,9 +693,6 @@
       color: #8b949e;
       text-align: center;
       white-space: nowrap;
-      max-width: 90px;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .phase-node--selected .phase-label {
@@ -715,6 +780,68 @@
     .phase-content-error {
       color: #f85149;
     }
+
+    /* Plan metadata bar — shown above PLAN.md content */
+    .plan-meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      margin-bottom: 16px;
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #8b949e;
+    }
+
+    .plan-meta-bar .meta-label {
+      color: #c9d1d9;
+      font-weight: 600;
+    }
+
+    .plan-meta-bar .meta-sep {
+      color: #484f58;
+    }
+
+    /* Browse view context bar — shows project info when navigating from dashboard */
+    #browse-context-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      margin: 16px 24px 0;
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    #browse-context-bar .ctx-project {
+      color: #f0f6fc;
+      font-weight: 600;
+    }
+
+    #browse-context-bar .ctx-sep {
+      color: #484f58;
+    }
+
+    #browse-context-bar .ctx-phase {
+      color: #8b949e;
+    }
+
+    #browse-context-bar .ctx-link {
+      margin-left: auto;
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    #browse-context-bar .ctx-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -747,9 +874,12 @@
         </div>
         <div id="tree"></div>
       </aside>
-      <main id="browse-content">
-        <p class="content-loading">Loading...</p>
-      </main>
+      <div id="browse-content-wrapper">
+        <div id="browse-context-bar" hidden></div>
+        <main id="browse-content">
+          <p class="content-loading">Loading...</p>
+        </main>
+      </div>
     </div>
 
     <!-- Project view -->
@@ -788,6 +918,7 @@
     const lastViewedFile = new Map();
     let treeData = null;
     let dashboardLoaded = false;
+    let cachedDashboardData = null;
 
     // ----------------------------------------------------------------
     // Utilities
@@ -915,6 +1046,7 @@
         }
 
         const data = await res.json();
+        cachedDashboardData = data;
         renderDashboard(viewEl, data.projects || [], data.other || []);
       } catch (err) {
         clearTimeout(loadingTimer);
@@ -1005,44 +1137,107 @@
       const card = document.createElement('div');
       card.className = 'project-card';
 
-      // Project name
+      // Header: project name + milestone
+      const header = document.createElement('div');
+      header.className = 'project-card-header';
       const nameEl = document.createElement('div');
       nameEl.className = 'project-card-name';
       nameEl.textContent = project.name;
-      card.appendChild(nameEl);
+      header.appendChild(nameEl);
+      if (project.milestone) {
+        const ms = document.createElement('span');
+        ms.className = 'project-card-milestone';
+        ms.textContent = project.milestone;
+        header.appendChild(ms);
+      }
+      card.appendChild(header);
 
-      // Phase dots
-      if (project.phaseStatus && project.phaseStatus.length > 0) {
-        const dotsEl = document.createElement('div');
-        dotsEl.className = 'phase-dots';
+      // Current phase callout
+      const phases = project.phaseStatus || [];
+      const activePhase = phases.find(p => p.status === 'in-progress');
+      if (activePhase) {
+        const callout = document.createElement('div');
+        callout.className = 'card-current-phase';
 
-        for (const phase of project.phaseStatus) {
-          const chip = document.createElement('span');
-          chip.className = 'phase-chip phase-chip--' + (phase.status === 'complete' ? 'complete' : phase.status === 'in-progress' ? 'active' : 'pending');
-          chip.title = phase.numStr + '-' + phase.slug + ' (' + phase.status + ')';
-          dotsEl.appendChild(chip);
+        const title = document.createElement('div');
+        title.className = 'card-phase-title';
+        title.textContent = '\u25B6 Phase ' + activePhase.numStr + ': ' + activePhase.slug;
+        callout.appendChild(title);
+
+        const prog = document.createElement('div');
+        prog.className = 'card-phase-progress';
+        prog.textContent = activePhase.completedPlans + '/' + activePhase.planCount + ' plans';
+        const pct = project.progress || {};
+        if (pct.percent) prog.textContent += ' \u00B7 ' + pct.percent + '% complete';
+        callout.appendChild(prog);
+
+        if (project.lastActivity) {
+          const act = document.createElement('div');
+          act.className = 'card-phase-activity';
+          act.textContent = project.lastActivity;
+          callout.appendChild(act);
         }
 
-        card.appendChild(dotsEl);
+        card.appendChild(callout);
+      } else {
+        // No active phase — show overall progress
+        const pct = project.progress || {};
+        if (pct.percent || project.currentFocus) {
+          const focus = document.createElement('div');
+          focus.className = 'card-phase-progress';
+          focus.style.marginBottom = '8px';
+          let text = project.currentFocus || '';
+          if (pct.percent) text += (text ? ' \u00B7 ' : '') + pct.percent + '% complete';
+          focus.textContent = text;
+          card.appendChild(focus);
+        }
       }
 
-      // Current focus
-      if (project.currentFocus) {
-        const focusEl = document.createElement('div');
-        focusEl.className = 'project-focus';
-        focusEl.textContent = truncate(project.currentFocus, 80);
-        card.appendChild(focusEl);
+      // Mini timeline with phase numbers
+      if (phases.length > 0) {
+        const timeline = document.createElement('div');
+        timeline.className = 'mini-timeline';
+
+        // Build a set of dependency relationships for connector styling
+        const deps = project.dependencies || {};
+
+        for (let i = 0; i < phases.length; i++) {
+          const phase = phases[i];
+          const isActive = phase.status === 'in-progress';
+          const statusClass = phase.status === 'complete' ? 'complete'
+            : isActive ? 'active' : 'pending';
+
+          const phaseEl = document.createElement('div');
+          phaseEl.className = 'mini-phase' + (isActive ? ' mini-phase--active' : '');
+          phaseEl.title = phase.numStr + ': ' + phase.slug + ' (' + phase.completedPlans + '/' + phase.planCount + ' plans)';
+
+          const dot = document.createElement('div');
+          dot.className = 'mini-dot mini-dot--' + statusClass;
+          phaseEl.appendChild(dot);
+
+          const num = document.createElement('span');
+          num.className = 'mini-num';
+          num.textContent = phase.numStr;
+          phaseEl.appendChild(num);
+
+          timeline.appendChild(phaseEl);
+
+          // Connector (not after last)
+          if (i < phases.length - 1) {
+            const conn = document.createElement('div');
+            // Check if next phase depends on current (shared dependency connector)
+            const nextPhase = phases[i + 1];
+            const nextDeps = deps[nextPhase.numStr] || nextPhase.dependsOn || [];
+            const isDep = nextDeps.includes(phase.numStr);
+            conn.className = 'mini-connector' + (isDep ? ' mini-connector--dep' : '');
+            timeline.appendChild(conn);
+          }
+        }
+
+        card.appendChild(timeline);
       }
 
-      // Last activity
-      if (project.lastActivity) {
-        const actEl = document.createElement('div');
-        actEl.className = 'project-activity';
-        actEl.textContent = truncate(project.lastActivity, 80);
-        card.appendChild(actEl);
-      }
-
-      // Quick-links (only those that exist)
+      // Quick-links (only those that exist) — use absolute paths for correct per-source rendering
       const existingLinks = (project.quickLinks || []).filter(ql => ql.exists);
       if (existingLinks.length > 0) {
         const qlRow = document.createElement('div');
@@ -1051,13 +1246,15 @@
         for (const ql of existingLinks) {
           const link = document.createElement('a');
           link.className = 'quick-link';
-          link.href = buildBrowseHash(project.name, ql.path);
+          // Use absolute path (source.path + relative) so /render resolves to correct source
+          const absPath = (project.path ? project.path.replace(/\/+$/, '') + '/' : '') + ql.path;
+          link.href = buildBrowseHash(project.name, absPath);
           link.textContent = ql.name;
 
           link.addEventListener('click', (e) => {
             e.stopPropagation(); // don't trigger card click
             e.preventDefault();
-            const hashUrl = buildBrowseHash(project.name, ql.path);
+            const hashUrl = buildBrowseHash(project.name, absPath);
             history.pushState(null, '', hashUrl);
             route(window.location.hash);
           });
@@ -1081,6 +1278,58 @@
     // ----------------------------------------------------------------
     // Browse view
     // ----------------------------------------------------------------
+
+    async function updateBrowseContextBar(sourceName) {
+      const bar = document.getElementById('browse-context-bar');
+      bar.hidden = true;
+      bar.innerHTML = '';
+
+      // Lazy-fetch dashboard data if not cached
+      if (!cachedDashboardData) {
+        try {
+          const res = await fetch('/api/dashboard');
+          if (res.ok) cachedDashboardData = await res.json();
+        } catch { /* ignore */ }
+      }
+      if (!cachedDashboardData) return;
+      const project = (cachedDashboardData.projects || []).find(p => p.name === sourceName);
+      if (!project) return;
+
+      const activePhase = (project.phaseStatus || []).find(p => p.status === 'in-progress');
+
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'ctx-project';
+      nameSpan.textContent = project.name;
+      bar.appendChild(nameSpan);
+
+      if (activePhase) {
+        const sep = document.createElement('span');
+        sep.className = 'ctx-sep';
+        sep.textContent = '|';
+        bar.appendChild(sep);
+
+        const phaseSpan = document.createElement('span');
+        phaseSpan.className = 'ctx-phase';
+        let phaseText = 'Phase ' + activePhase.numStr + ': ' + activePhase.slug;
+        const pct = project.progress || {};
+        if (pct.percent) phaseText += ' \u00B7 ' + pct.percent + '%';
+        phaseSpan.textContent = phaseText;
+        bar.appendChild(phaseSpan);
+      }
+
+      const link = document.createElement('a');
+      link.className = 'ctx-link';
+      link.href = buildProjectHash(project.name, null);
+      link.textContent = '\u2190 project detail';
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        history.pushState(null, '', buildProjectHash(project.name, null));
+        route(window.location.hash);
+      });
+      bar.appendChild(link);
+
+      bar.hidden = false;
+    }
 
     async function enterBrowseView(sourceName, filePath) {
       // Load sources if not loaded yet
@@ -1106,7 +1355,17 @@
         await loadTree(targetSource);
       }
 
+      // Show project context bar if this source is a GSD project
+      updateBrowseContextBar(targetSource);
+
       if (filePath) {
+        // Normalize absolute filesystem paths to relative paths for tree matching.
+        // Dashboard quick-links build absolute paths (/Users/.../project/.planning/STATE.md)
+        // but tree sidebar nodes use relative data-path (.planning/STATE.md).
+        const source = sourcesList.find(s => s.name === targetSource);
+        if (source && source.path && filePath.startsWith(source.path)) {
+          filePath = filePath.slice(source.path.length).replace(/^\/+/, '');
+        }
         lastViewedFile.set(targetSource, filePath);
         await loadFile(targetSource, filePath);
       } else {
@@ -1530,13 +1789,10 @@
         dot.className = 'phase-dot ' + dotClass;
         node.appendChild(dot);
 
-        // Label: "Phase 04.5" or slug (truncated)
+        // Label: phase number + slug name (never truncate)
         const label = document.createElement('span');
         label.className = 'phase-label';
-        const labelText = phase.slug
-          ? truncate(phase.slug, 12)
-          : 'Phase ' + phase.numStr;
-        label.textContent = labelText;
+        label.textContent = phase.numStr + ': ' + (phase.slug || 'Phase ' + phase.numStr);
         label.title = 'Phase ' + phase.numStr + (phase.slug ? ' — ' + phase.slug : '');
         node.appendChild(label);
 
@@ -1606,7 +1862,7 @@
           // Highlight active
           fileListEl.querySelectorAll('.phase-file-item').forEach(el => el.classList.remove('active'));
           item.classList.add('active');
-          loadPhaseFile(currentProjectName, phaseDir, fileName, sourcePath);
+          loadPhaseFile(currentProjectName, phaseDir, fileName, sourcePath, phaseObj.planDetails);
         });
 
         fileListEl.appendChild(item);
@@ -1616,11 +1872,11 @@
       const firstItem = fileListEl.querySelector('.phase-file-item');
       if (firstItem) {
         firstItem.classList.add('active');
-        loadPhaseFile(currentProjectName, phaseDir, mdFiles[0], sourcePath);
+        loadPhaseFile(currentProjectName, phaseDir, mdFiles[0], sourcePath, phaseObj.planDetails);
       }
     }
 
-    async function loadPhaseFile(sourceName, phaseDir, fileName, sourcePath) {
+    async function loadPhaseFile(sourceName, phaseDir, fileName, sourcePath, planDetails) {
       const contentEl = document.getElementById('phase-content');
       contentEl.innerHTML = '<p class="phase-content-loading">Loading...</p>';
 
@@ -1638,7 +1894,24 @@
         }
 
         const html = await res.text();
-        contentEl.innerHTML = html;
+
+        // Build wave meta bar for PLAN.md files
+        let metaHtml = '';
+        if (planDetails && planDetails.length > 0) {
+          const detail = planDetails.find(d => d.file === fileName);
+          if (detail && detail.wave != null) {
+            const depsText = detail.dependsOn && detail.dependsOn.length > 0
+              ? detail.dependsOn.join(', ')
+              : '(none)';
+            metaHtml = '<div class="plan-meta-bar">'
+              + '<span><span class="meta-label">Wave ' + escapeHtml(String(detail.wave)) + '</span></span>'
+              + '<span class="meta-sep">&middot;</span>'
+              + '<span>depends on: ' + escapeHtml(depsText) + '</span>'
+              + '</div>';
+          }
+        }
+
+        contentEl.innerHTML = metaHtml + html;
         contentEl.scrollTop = 0;
       } catch (err) {
         contentEl.innerHTML = '<p class="phase-content-error">Error: ' + escapeHtml(err.message) + '</p>';

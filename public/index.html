@@ -484,18 +484,236 @@
     }
 
     /* ------------------------------------------------------------------ */
-    /* Project view (placeholder — Plan 03 implements)                     */
+    /* Project view                                                         */
     /* ------------------------------------------------------------------ */
+
+    #view-project {
+      overflow-y: auto;
+    }
 
     #view-project.active {
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
     }
 
-    .project-placeholder {
+    #project-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px 12px;
+      border-bottom: 1px solid #21262d;
+      background: #161b22;
+      flex-shrink: 0;
+    }
+
+    #back-to-dashboard {
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 13px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    #back-to-dashboard:hover {
+      text-decoration: underline;
+    }
+
+    #project-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #f0f6fc;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    #branch-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    #branch-bar label {
+      font-size: 12px;
+      color: #8b949e;
+    }
+
+    #branch-select {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      color: #c9d1d9;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    #branch-select:focus {
+      outline: none;
+      border-color: #58a6ff;
+    }
+
+    /* Phase timeline */
+    #phase-timeline-container {
+      padding: 16px 24px;
+      border-bottom: 1px solid #21262d;
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+
+    .phase-timeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      min-width: min-content;
+    }
+
+    .phase-timeline-empty {
+      color: #484f58;
+      font-style: italic;
+      font-size: 13px;
+    }
+
+    .phase-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.1s;
+      min-width: 80px;
+    }
+
+    .phase-node:hover {
+      background: rgba(88, 166, 255, 0.08);
+    }
+
+    .phase-node--selected {
+      background: rgba(88, 166, 255, 0.12);
+    }
+
+    .phase-connector {
+      width: 32px;
+      height: 2px;
+      background: #21262d;
+      flex-shrink: 0;
+    }
+
+    .phase-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: box-shadow 0.1s;
+    }
+
+    .phase-dot--complete { background: #3fb950; }
+    .phase-dot--active   { background: #58a6ff; }
+    .phase-dot--pending  { background: #484f58; }
+
+    .phase-node--selected .phase-dot {
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    }
+
+    .phase-label {
+      font-size: 11px;
+      color: #8b949e;
+      text-align: center;
+      white-space: nowrap;
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .phase-node--selected .phase-label {
+      color: #c9d1d9;
+    }
+
+    .phase-progress {
+      font-size: 10px;
+      color: #484f58;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .phase-node--selected .phase-progress {
+      color: #8b949e;
+    }
+
+    /* Documentation panel */
+    #docs-panel {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      grid-template-rows: 1fr;
+      overflow: hidden;
+    }
+
+    #phase-file-list {
+      background: #161b22;
+      border-right: 1px solid #21262d;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .phase-file-item {
+      display: block;
+      color: #58a6ff;
+      text-decoration: none;
+      padding: 5px 12px;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+    }
+
+    .phase-file-item:hover {
+      text-decoration: underline;
+      background: rgba(88, 166, 255, 0.05);
+    }
+
+    .phase-file-item.active {
+      background: rgba(31, 111, 235, 0.12);
+      border-left: 2px solid #58a6ff;
+      color: #f0f6fc;
+      padding-left: 10px;
+    }
+
+    .phase-file-empty {
+      color: #484f58;
+      font-style: italic;
+      font-size: 13px;
+      padding: 12px;
+    }
+
+    #phase-content {
+      background: #0d1117;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    #phase-content .markdown-body {
+      max-width: 860px;
+    }
+
+    .phase-content-loading {
       color: #8b949e;
       font-style: italic;
+    }
+
+    .phase-content-error {
+      color: #f85149;
     }
   </style>
 </head>
@@ -534,9 +752,28 @@
       </main>
     </div>
 
-    <!-- Project view (placeholder) -->
+    <!-- Project view -->
     <div id="view-project" class="view">
-      <p class="project-placeholder">Loading project...</p>
+      <!-- Header: back link, project title, branch selector -->
+      <div id="project-header">
+        <a href="#/" id="back-to-dashboard">&larr; Dashboard</a>
+        <h2 id="project-title"></h2>
+        <div id="branch-bar" hidden>
+          <label for="branch-select">Branch:</label>
+          <select id="branch-select" aria-label="Select branch"></select>
+        </div>
+      </div>
+
+      <!-- Phase timeline (horizontal bar with dots) -->
+      <div id="phase-timeline-container">
+        <div id="phase-timeline" class="phase-timeline"></div>
+      </div>
+
+      <!-- Documentation panel: file list left, rendered content right -->
+      <div id="docs-panel">
+        <div id="phase-file-list"></div>
+        <div id="phase-content"></div>
+      </div>
     </div>
 
   </div>
@@ -653,7 +890,7 @@
         await enterBrowseView(parsed.sourceName, parsed.filePath);
       } else if (parsed.view === 'project') {
         showView('project');
-        // Plan 03 will implement; for now just show placeholder
+        await loadProjectDetail(parsed.sourceName, parsed.branch);
       }
     }
 
@@ -1179,12 +1416,259 @@
     }
 
     // ----------------------------------------------------------------
+    // Project detail view
+    // ----------------------------------------------------------------
+
+    // Track current project state for branch switching
+    let currentProjectName = null;
+    let currentProjectPhase = null;
+
+    async function loadProjectDetail(sourceName, branch) {
+      if (!sourceName) {
+        document.getElementById('project-title').textContent = 'Unknown project';
+        return;
+      }
+
+      currentProjectName = sourceName;
+
+      // Show loading state
+      document.getElementById('project-title').textContent = escapeHtml(sourceName);
+      document.getElementById('phase-timeline').innerHTML = '<span class="phase-timeline-empty">Loading...</span>';
+      document.getElementById('phase-file-list').innerHTML = '';
+      document.getElementById('phase-content').innerHTML = '<p class="phase-content-loading">Loading...</p>';
+      document.getElementById('branch-bar').hidden = true;
+
+      try {
+        let url = '/api/projects/' + encodeURIComponent(sourceName) + '/detail';
+        if (branch) url += '?branch=' + encodeURIComponent(branch);
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          document.getElementById('phase-timeline').innerHTML =
+            '<span class="phase-timeline-empty">Failed to load project (HTTP ' + escapeHtml(String(res.status)) + ')</span>';
+          document.getElementById('phase-content').innerHTML = '';
+          return;
+        }
+
+        const data = await res.json();
+
+        // Set title
+        document.getElementById('project-title').textContent = data.source ? data.source.name : sourceName;
+
+        // Branch selector
+        const branches = data.branches || [];
+        const branchBar = document.getElementById('branch-bar');
+        const branchSelect = document.getElementById('branch-select');
+        if (branches.length > 1) {
+          branchSelect.textContent = '';
+          for (const b of branches) {
+            const opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            branchSelect.appendChild(opt);
+          }
+          branchSelect.value = data.branch || branches[0];
+          branchBar.hidden = false;
+        } else {
+          branchBar.hidden = true;
+        }
+
+        // Render timeline
+        const phases = data.phases || [];
+        renderTimeline(phases);
+
+        // Auto-select phase: first in-progress, then last complete, then first
+        let autoPhase = phases.find(p => p.status === 'in-progress');
+        if (!autoPhase) {
+          const completePhases = phases.filter(p => p.status === 'complete');
+          autoPhase = completePhases[completePhases.length - 1];
+        }
+        if (!autoPhase && phases.length > 0) {
+          autoPhase = phases[0];
+        }
+
+        if (autoPhase) {
+          selectPhase(autoPhase, data.source ? data.source.path : null);
+        } else {
+          document.getElementById('phase-file-list').innerHTML = '';
+          document.getElementById('phase-content').innerHTML =
+            '<p class="phase-content-loading">No phases found.</p>';
+          document.getElementById('phase-timeline').innerHTML =
+            '<span class="phase-timeline-empty">No phases found.</span>';
+        }
+      } catch (err) {
+        document.getElementById('phase-timeline').innerHTML =
+          '<span class="phase-timeline-empty">Error loading project: ' + escapeHtml(err.message) + '</span>';
+        document.getElementById('phase-content').innerHTML = '';
+      }
+    }
+
+    function renderTimeline(phases) {
+      const container = document.getElementById('phase-timeline');
+      container.innerHTML = '';
+
+      if (!phases || phases.length === 0) {
+        container.innerHTML = '<span class="phase-timeline-empty">No phases found.</span>';
+        return;
+      }
+
+      for (let i = 0; i < phases.length; i++) {
+        const phase = phases[i];
+
+        // Phase node
+        const node = document.createElement('div');
+        node.className = 'phase-node';
+        node.dataset.phaseNum = phase.numStr;
+
+        // Dot
+        const dotClass = phase.status === 'complete'
+          ? 'phase-dot--complete'
+          : phase.status === 'in-progress'
+            ? 'phase-dot--active'
+            : 'phase-dot--pending';
+        const dot = document.createElement('div');
+        dot.className = 'phase-dot ' + dotClass;
+        node.appendChild(dot);
+
+        // Label: "Phase 04.5" or slug (truncated)
+        const label = document.createElement('span');
+        label.className = 'phase-label';
+        const labelText = phase.slug
+          ? truncate(phase.slug, 12)
+          : 'Phase ' + phase.numStr;
+        label.textContent = labelText;
+        label.title = 'Phase ' + phase.numStr + (phase.slug ? ' — ' + phase.slug : '');
+        node.appendChild(label);
+
+        // Progress: "X/Y plans"
+        const progress = document.createElement('span');
+        progress.className = 'phase-progress';
+        progress.textContent = (phase.completedPlans || 0) + '/' + (phase.planCount || 0) + ' plans';
+        node.appendChild(progress);
+
+        // Click handler — store sourcePath on the node for use in selectPhase
+        node.addEventListener('click', () => {
+          // Retrieve sourcePath from the detail response stored on container
+          const sourcePath = container.dataset.sourcePath || null;
+          selectPhase(phase, sourcePath);
+        });
+
+        container.appendChild(node);
+
+        // Connector (not after last)
+        if (i < phases.length - 1) {
+          const conn = document.createElement('div');
+          conn.className = 'phase-connector';
+          container.appendChild(conn);
+        }
+      }
+    }
+
+    function selectPhase(phaseObj, sourcePath) {
+      if (!phaseObj) return;
+      currentProjectPhase = phaseObj;
+
+      // Store sourcePath on the timeline container for click handlers
+      const container = document.getElementById('phase-timeline');
+      container.dataset.sourcePath = sourcePath || '';
+
+      // Update selected highlight on nodes
+      const allNodes = container.querySelectorAll('.phase-node');
+      allNodes.forEach(n => {
+        n.classList.toggle('phase-node--selected', n.dataset.phaseNum === String(phaseObj.numStr));
+      });
+
+      // Build file list (only .md files)
+      const fileListEl = document.getElementById('phase-file-list');
+      fileListEl.innerHTML = '';
+
+      const mdFiles = (phaseObj.files || []).filter(f => f.endsWith('.md'));
+      if (mdFiles.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'phase-file-empty';
+        empty.textContent = 'No documentation files.';
+        fileListEl.appendChild(empty);
+        document.getElementById('phase-content').innerHTML = '';
+        return;
+      }
+
+      // Phase directory name is "numStr-slug" e.g. "04.5-gsd-dashboard"
+      const phaseDir = phaseObj.numStr + (phaseObj.slug ? '-' + phaseObj.slug : '');
+
+      for (const fileName of mdFiles) {
+        const item = document.createElement('button');
+        item.className = 'phase-file-item';
+        item.textContent = fileName;
+        item.title = fileName;
+        item.dataset.fileName = fileName;
+
+        item.addEventListener('click', () => {
+          // Highlight active
+          fileListEl.querySelectorAll('.phase-file-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          loadPhaseFile(currentProjectName, phaseDir, fileName, sourcePath);
+        });
+
+        fileListEl.appendChild(item);
+      }
+
+      // Auto-select first file
+      const firstItem = fileListEl.querySelector('.phase-file-item');
+      if (firstItem) {
+        firstItem.classList.add('active');
+        loadPhaseFile(currentProjectName, phaseDir, mdFiles[0], sourcePath);
+      }
+    }
+
+    async function loadPhaseFile(sourceName, phaseDir, fileName, sourcePath) {
+      const contentEl = document.getElementById('phase-content');
+      contentEl.innerHTML = '<p class="phase-content-loading">Loading...</p>';
+
+      try {
+        // Build absolute file path: sourcePath + /.planning/phases/phaseDir/fileName
+        const base = (sourcePath || '').replace(/\/+$/, '');
+        const filePath = base + '/.planning/phases/' + phaseDir + '/' + fileName;
+
+        const url = '/render?path=' + encodeURIComponent(filePath) + '&fragment=true';
+        const res = await fetch(url);
+
+        if (!res.ok) {
+          contentEl.innerHTML = '<p class="phase-content-error">Failed to load file (HTTP ' + escapeHtml(String(res.status)) + ')</p>';
+          return;
+        }
+
+        const html = await res.text();
+        contentEl.innerHTML = html;
+        contentEl.scrollTop = 0;
+      } catch (err) {
+        contentEl.innerHTML = '<p class="phase-content-error">Error: ' + escapeHtml(err.message) + '</p>';
+      }
+    }
+
+    // ----------------------------------------------------------------
     // Boot sequence
     // ----------------------------------------------------------------
 
     document.addEventListener('DOMContentLoaded', async () => {
       // Wire sidebar toggle
       document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+
+      // Wire back-to-dashboard link
+      document.getElementById('back-to-dashboard').addEventListener('click', (e) => {
+        e.preventDefault();
+        history.pushState(null, '', '#/');
+        route(window.location.hash);
+      });
+
+      // Wire branch selector
+      document.getElementById('branch-select').addEventListener('change', (e) => {
+        const branch = e.target.value;
+        if (currentProjectName) {
+          const hashUrl = buildProjectHash(currentProjectName, branch);
+          history.pushState(null, '', hashUrl);
+          loadProjectDetail(currentProjectName, branch);
+        }
+      });
 
       // Wire source switcher
       document.getElementById('source-select').addEventListener('change', (e) => {

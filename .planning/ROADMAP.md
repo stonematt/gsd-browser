@@ -82,8 +82,8 @@ Plans:
 **Plans:** 2/2 plans complete
 
 Plans:
-- [ ] 04-01-PLAN.md — Tree API endpoint + fragment rendering mode (server-side)
-- [ ] 04-02-PLAN.md — Three-panel SPA shell with file tree, source switcher, and content pane + visual verification
+- [x] 04-01-PLAN.md — Tree API endpoint + fragment rendering mode (server-side)
+- [x] 04-02-PLAN.md — Three-panel SPA shell with file tree, source switcher, and content pane + visual verification
 
 ### Phase 4.5: GSD Dashboard (INSERTED)
 **Goal**: A multi-project dashboard surfaces GSD progress, editorial context, and phase documentation across registered sources and branches
@@ -96,7 +96,12 @@ Plans:
   4. Clicking a phase in the timeline shows that phase's documentation (plans, summaries, research, validation) in a sidebar with rendered content pane
   5. For sources that are git repos with multiple branches containing `.planning/`, the dashboard shows per-branch milestone progress (read via `git show <branch>:.planning/STATE.md`)
   6. Non-GSD sources (no `.planning/STATE.md`) still appear on the dashboard but fall back to the file browser view
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 04.5-01-PLAN.md — Server-side API endpoints + parsing utilities (dashboard data, phase detection, git branch operations)
+- [ ] 04.5-02-PLAN.md — Dashboard landing page SPA with project cards, multi-view routing, and browse view preservation
+- [ ] 04.5-03-PLAN.md — Project detail page with phase timeline, documentation viewer, and branch awareness + visual verification
 
 ### Phase 5: Navigation Polish
 **Goal**: Documents with internal links, heading anchors, and Mermaid diagrams navigate and render correctly
@@ -129,6 +134,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 5 -> 6
 | 2. Rendering | 2/2 | Complete   | 2026-03-13 |
 | 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
 | 4. Browser UI | 2/2 | Complete   | 2026-03-22 |
-| 4.5. GSD Dashboard | 0/TBD | Not started | - |
+| 4.5. GSD Dashboard | 0/3 | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

@@ -710,19 +710,19 @@ test("NAV-02: GET /render?path=X&fragment=true has strict CSP (script-src 'none'
 // Phase 4 Plan 02: SPA shell HTML structure smoke tests
 // ============================================================
 
-test('NAV-03: GET / response contains id="sidebar" element', async () => {
+test('NAV-03: GET / response contains id="browse-sidebar" element', async () => {
   const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/' });
   assert.equal(response.statusCode, 200);
-  assert.ok(response.body.includes('id="sidebar"'), 'response body should contain id="sidebar"');
+  assert.ok(response.body.includes('id="browse-sidebar"'), 'response body should contain id="browse-sidebar"');
   await fastify.close();
 });
 
-test('NAV-03: GET / response contains id="content" element', async () => {
+test('NAV-03: GET / response contains id="browse-content" element', async () => {
   const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/' });
   assert.equal(response.statusCode, 200);
-  assert.ok(response.body.includes('id="content"'), 'response body should contain id="content"');
+  assert.ok(response.body.includes('id="browse-content"'), 'response body should contain id="browse-content"');
   await fastify.close();
 });
 

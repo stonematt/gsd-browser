@@ -14,22 +14,10 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       font-size: 14px;
       line-height: 1.5;
-      display: grid;
-      grid-template-rows: 44px 1fr;
-      grid-template-columns: 260px 1fr;
-      grid-template-areas:
-        "header header"
-        "sidebar content";
       height: 100vh;
       overflow: hidden;
-    }
-
-    body.sidebar-hidden {
-      grid-template-columns: 0 1fr;
-    }
-
-    body.sidebar-hidden #sidebar {
-      display: none;
+      display: flex;
+      flex-direction: column;
     }
 
     /* ------------------------------------------------------------------ */
@@ -37,15 +25,63 @@
     /* ------------------------------------------------------------------ */
 
     #app-header {
-      grid-area: header;
       background: #161b22;
       border-bottom: 1px solid #21262d;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       padding: 0 16px;
+      height: 44px;
+      flex-shrink: 0;
+      z-index: 10;
     }
 
+    #app-title {
+      font-weight: 600;
+      color: #f0f6fc;
+      text-decoration: none;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    #app-title:hover {
+      color: #58a6ff;
+    }
+
+    #header-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .nav-link {
+      color: #8b949e;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      flex-shrink: 0;
+    }
+
+    .nav-link:hover {
+      color: #c9d1d9;
+      background: #21262d;
+    }
+
+    .nav-link.active {
+      color: #f0f6fc;
+      border-color: #21262d;
+      background: #0d1117;
+    }
+
+    #header-sep {
+      color: #21262d;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Sidebar toggle — only shown in browse view */
     #sidebar-toggle {
       background: none;
       border: 1px solid #21262d;
@@ -56,6 +92,7 @@
       font-size: 14px;
       line-height: 1;
       flex-shrink: 0;
+      display: none;
     }
 
     #sidebar-toggle:hover {
@@ -63,6 +100,11 @@
       color: #c9d1d9;
     }
 
+    #sidebar-toggle.visible {
+      display: block;
+    }
+
+    /* Breadcrumb — only shown in browse view */
     #breadcrumb {
       flex: 1;
       font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
@@ -71,6 +113,11 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      display: none;
+    }
+
+    #breadcrumb.visible {
+      display: block;
     }
 
     #breadcrumb .bc-sep {
@@ -82,22 +129,214 @@
       color: #f0f6fc;
     }
 
-    .header-link {
-      color: #58a6ff;
-      text-decoration: none;
+    /* Header spacer — used when breadcrumb is not shown */
+    #header-spacer {
+      flex: 1;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Views container                                                      */
+    /* ------------------------------------------------------------------ */
+
+    #views {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .view {
+      display: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    .view.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Dashboard view                                                       */
+    /* ------------------------------------------------------------------ */
+
+    #view-dashboard {
+      overflow-y: auto;
+    }
+
+    #view-dashboard.active {
+      display: block;
+    }
+
+    .dash-section {
+      padding: 24px 24px 0;
+    }
+
+    .dash-section-title {
       font-size: 13px;
+      font-weight: 600;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .project-card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .project-card:hover {
+      border-color: #58a6ff;
+    }
+
+    .project-card-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 8px;
+    }
+
+    .phase-dots {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .phase-chip {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
       flex-shrink: 0;
     }
 
-    .header-link:hover {
+    .phase-chip--complete { background: #3fb950; }
+    .phase-chip--active   { background: #58a6ff; }
+    .phase-chip--pending  { background: #484f58; }
+
+    .project-focus {
+      font-size: 12px;
+      color: #c9d1d9;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .project-activity {
+      font-size: 11px;
+      color: #484f58;
+      margin-bottom: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .quick-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-top: 1px solid #21262d;
+      padding-top: 10px;
+      margin-top: 4px;
+    }
+
+    .quick-link {
+      font-size: 11px;
+      color: #58a6ff;
+      text-decoration: none;
+    }
+
+    .quick-link:hover {
       text-decoration: underline;
     }
 
+    .other-sources-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .other-source-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .other-source-link {
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .other-source-link:hover {
+      text-decoration: underline;
+    }
+
+    .other-source-badge {
+      font-size: 10px;
+      color: #8b949e;
+      background: #21262d;
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+
+    .dash-empty {
+      color: #484f58;
+      font-style: italic;
+      padding: 24px 0;
+    }
+
+    .dash-error {
+      color: #f85149;
+      padding: 24px;
+    }
+
+    .dash-loading {
+      color: #8b949e;
+      font-style: italic;
+      padding: 24px;
+    }
+
     /* ------------------------------------------------------------------ */
-    /* Sidebar                                                              */
+    /* Browse view                                                          */
     /* ------------------------------------------------------------------ */
 
-    #sidebar {
+    #view-browse {
+      display: none;
+    }
+
+    #view-browse.active {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 1fr;
+      grid-template-areas: "sidebar content";
+    }
+
+    #view-browse.sidebar-hidden {
+      grid-template-columns: 0 1fr;
+    }
+
+    #view-browse.sidebar-hidden #browse-sidebar {
+      display: none;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Browse sidebar                                                       */
+    /* ------------------------------------------------------------------ */
+
+    #browse-sidebar {
       grid-area: sidebar;
       background: #161b22;
       border-right: 1px solid #21262d;
@@ -187,10 +426,6 @@
       transform: rotate(-90deg);
     }
 
-    .tree-children {
-      /* visible by default; collapsed dirs hide this */
-    }
-
     .tree-children[hidden] {
       display: none;
     }
@@ -217,10 +452,10 @@
     }
 
     /* ------------------------------------------------------------------ */
-    /* Content pane                                                         */
+    /* Browse content pane                                                  */
     /* ------------------------------------------------------------------ */
 
-    #content {
+    #browse-content {
       grid-area: content;
       background: #0d1117;
       overflow-y: auto;
@@ -244,39 +479,78 @@
       padding: 24px 0;
     }
 
-    /* Constrain markdown content to a readable width */
-    #content .markdown-body {
+    #browse-content .markdown-body {
       max-width: 860px;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Project view (placeholder — Plan 03 implements)                     */
+    /* ------------------------------------------------------------------ */
+
+    #view-project.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .project-placeholder {
+      color: #8b949e;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
 
   <header id="app-header">
+    <a id="app-title" href="#/">gsd-browser</a>
+    <span id="header-sep">|</span>
+    <nav id="header-nav">
+      <a class="nav-link" href="#/" data-view="dashboard">Dashboard</a>
+      <a class="nav-link" href="#/browse/" data-view="browse">Browse</a>
+      <a class="nav-link header-link" href="/sources">Sources</a>
+    </nav>
     <button id="sidebar-toggle" title="Toggle sidebar">&#9776;</button>
-    <nav id="breadcrumb"><span class="bc-file">gsd-browser</span></nav>
-    <a class="header-link" href="/sources">Manage Sources</a>
+    <nav id="breadcrumb"></nav>
+    <div id="header-spacer"></div>
   </header>
 
-  <aside id="sidebar">
-    <div id="source-switcher">
-      <select id="source-select" aria-label="Select source"></select>
-    </div>
-    <div id="tree"></div>
-  </aside>
+  <div id="views">
 
-  <main id="content">
-    <p class="content-loading">Loading...</p>
-  </main>
+    <!-- Dashboard view -->
+    <div id="view-dashboard" class="view active">
+      <p class="dash-loading">Loading...</p>
+    </div>
+
+    <!-- Browse view -->
+    <div id="view-browse" class="view">
+      <aside id="browse-sidebar">
+        <div id="source-switcher">
+          <select id="source-select" aria-label="Select source"></select>
+        </div>
+        <div id="tree"></div>
+      </aside>
+      <main id="browse-content">
+        <p class="content-loading">Loading...</p>
+      </main>
+    </div>
+
+    <!-- Project view (placeholder) -->
+    <div id="view-project" class="view">
+      <p class="project-placeholder">Loading project...</p>
+    </div>
+
+  </div>
 
   <script>
     // ----------------------------------------------------------------
-    // State
+    // App state
     // ----------------------------------------------------------------
+    let currentView = 'dashboard';
     let currentSource = null;
     let sourcesList = [];
     const lastViewedFile = new Map();
     let treeData = null;
+    let dashboardLoaded = false;
 
     // ----------------------------------------------------------------
     // Utilities
@@ -290,35 +564,330 @@
         .replace(/"/g, '&quot;');
     }
 
-    // Parse #/source-name/path/to/file.md
-    // Returns { sourceName, filePath } — both may be empty string
-    function parseHash(hash) {
+    function truncate(str, maxLen) {
+      if (!str) return '';
+      if (str.length <= maxLen) return str;
+      return str.slice(0, maxLen - 1) + '\u2026';
+    }
+
+    // ----------------------------------------------------------------
+    // Hash-based routing
+    // ----------------------------------------------------------------
+
+    // Parse #/ into { view, sourceName, filePath, branch }
+    function parseAppHash(hash) {
       if (!hash || hash === '#' || hash === '#/') {
-        return { sourceName: '', filePath: '' };
+        return { view: 'dashboard' };
       }
       const raw = hash.replace(/^#\/?/, '');
-      const slashIdx = raw.indexOf('/');
-      if (slashIdx === -1) {
-        return { sourceName: raw, filePath: '' };
+      const parts = raw.split('/');
+
+      if (parts[0] === 'project') {
+        return {
+          view: 'project',
+          sourceName: decodeURIComponent(parts[1] || ''),
+          branch: parts[2] ? decodeURIComponent(parts[2]) : null
+        };
       }
-      return {
-        sourceName: raw.slice(0, slashIdx),
-        filePath: raw.slice(slashIdx + 1)
-      };
+      if (parts[0] === 'browse') {
+        const sourceName = decodeURIComponent(parts[1] || '');
+        const filePath = parts.slice(2).map(decodeURIComponent).join('/');
+        return { view: 'browse', sourceName, filePath };
+      }
+      return { view: 'dashboard' };
     }
 
-    function buildHashUrl(sourceName, filePath) {
-      return '#/' + sourceName + (filePath ? '/' + filePath : '');
+    function buildBrowseHash(sourceName, filePath) {
+      return '#/browse/' + encodeURIComponent(sourceName) + (filePath ? '/' + filePath : '');
+    }
+
+    function buildProjectHash(sourceName, branch) {
+      return '#/project/' + encodeURIComponent(sourceName) + (branch ? '/' + encodeURIComponent(branch) : '');
     }
 
     // ----------------------------------------------------------------
-    // Navigation
+    // View management
     // ----------------------------------------------------------------
 
-    function navigateTo(sourceName, filePath) {
-      const url = buildHashUrl(sourceName, filePath);
-      history.pushState(null, '', url);
-      loadFile(sourceName, filePath);
+    function showView(viewName) {
+      // Hide all views
+      const views = document.querySelectorAll('.view');
+      views.forEach(v => v.classList.remove('active'));
+
+      // Show target view
+      const target = document.getElementById('view-' + viewName);
+      if (target) target.classList.add('active');
+
+      // Update nav highlights
+      const navLinks = document.querySelectorAll('.nav-link[data-view]');
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.dataset.view === viewName);
+      });
+
+      // Show/hide browse-specific header elements
+      const sidebarToggle = document.getElementById('sidebar-toggle');
+      const breadcrumb = document.getElementById('breadcrumb');
+      if (viewName === 'browse') {
+        sidebarToggle.classList.add('visible');
+        breadcrumb.classList.add('visible');
+      } else {
+        sidebarToggle.classList.remove('visible');
+        breadcrumb.classList.remove('visible');
+      }
+
+      currentView = viewName;
+    }
+
+    // ----------------------------------------------------------------
+    // Router
+    // ----------------------------------------------------------------
+
+    async function route(hash) {
+      const parsed = parseAppHash(hash);
+
+      if (parsed.view === 'dashboard') {
+        showView('dashboard');
+        await loadDashboard();
+      } else if (parsed.view === 'browse') {
+        showView('browse');
+        await enterBrowseView(parsed.sourceName, parsed.filePath);
+      } else if (parsed.view === 'project') {
+        showView('project');
+        // Plan 03 will implement; for now just show placeholder
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // Dashboard view
+    // ----------------------------------------------------------------
+
+    async function loadDashboard() {
+      const viewEl = document.getElementById('view-dashboard');
+
+      let loadingTimer = setTimeout(() => {
+        viewEl.innerHTML = '<p class="dash-loading">Loading...</p>';
+      }, 200);
+
+      try {
+        const res = await fetch('/api/dashboard');
+        clearTimeout(loadingTimer);
+
+        if (!res.ok) {
+          viewEl.innerHTML = '<p class="dash-error">Failed to load dashboard (HTTP ' + escapeHtml(String(res.status)) + ')</p>';
+          return;
+        }
+
+        const data = await res.json();
+        renderDashboard(viewEl, data.projects || [], data.other || []);
+      } catch (err) {
+        clearTimeout(loadingTimer);
+        viewEl.innerHTML = '<p class="dash-error">Error loading dashboard: ' + escapeHtml(err.message) + '</p>';
+      }
+    }
+
+    function renderDashboard(container, projects, other) {
+      container.innerHTML = '';
+
+      // GSD Projects section
+      if (projects.length > 0) {
+        const section = document.createElement('div');
+        section.className = 'dash-section';
+
+        const title = document.createElement('div');
+        title.className = 'dash-section-title';
+        title.textContent = 'Projects';
+        section.appendChild(title);
+
+        const grid = document.createElement('div');
+        grid.className = 'project-grid';
+
+        for (const project of projects) {
+          grid.appendChild(renderProjectCard(project));
+        }
+
+        section.appendChild(grid);
+        container.appendChild(section);
+      } else {
+        const section = document.createElement('div');
+        section.className = 'dash-section';
+        const empty = document.createElement('p');
+        empty.className = 'dash-empty';
+        empty.innerHTML = 'No GSD projects found. <a href="/sources" style="color:#58a6ff">Add a source</a> to get started.';
+        section.appendChild(empty);
+        container.appendChild(section);
+      }
+
+      // Other Sources section
+      if (other.length > 0) {
+        const section = document.createElement('div');
+        section.className = 'dash-section';
+        section.style.marginTop = '24px';
+
+        const title = document.createElement('div');
+        title.className = 'dash-section-title';
+        title.textContent = 'Other Sources';
+        section.appendChild(title);
+
+        const list = document.createElement('div');
+        list.className = 'other-sources-list';
+
+        for (const src of other) {
+          const item = document.createElement('div');
+          item.className = 'other-source-item';
+
+          const link = document.createElement('a');
+          link.className = 'other-source-link';
+          link.href = buildBrowseHash(src.name, '');
+          link.textContent = escapeHtml(src.name);
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            history.pushState(null, '', buildBrowseHash(src.name, ''));
+            route(window.location.hash);
+          });
+
+          const badge = document.createElement('span');
+          badge.className = 'other-source-badge';
+          badge.textContent = 'file browser';
+
+          item.appendChild(link);
+          item.appendChild(badge);
+          list.appendChild(item);
+        }
+
+        section.appendChild(list);
+        container.appendChild(section);
+      }
+
+      // Bottom padding
+      const pad = document.createElement('div');
+      pad.style.height = '24px';
+      container.appendChild(pad);
+    }
+
+    function renderProjectCard(project) {
+      const card = document.createElement('div');
+      card.className = 'project-card';
+
+      // Project name
+      const nameEl = document.createElement('div');
+      nameEl.className = 'project-card-name';
+      nameEl.textContent = project.name;
+      card.appendChild(nameEl);
+
+      // Phase dots
+      if (project.phaseStatus && project.phaseStatus.length > 0) {
+        const dotsEl = document.createElement('div');
+        dotsEl.className = 'phase-dots';
+
+        for (const phase of project.phaseStatus) {
+          const chip = document.createElement('span');
+          chip.className = 'phase-chip phase-chip--' + (phase.status === 'complete' ? 'complete' : phase.status === 'in-progress' ? 'active' : 'pending');
+          chip.title = phase.numStr + '-' + phase.slug + ' (' + phase.status + ')';
+          dotsEl.appendChild(chip);
+        }
+
+        card.appendChild(dotsEl);
+      }
+
+      // Current focus
+      if (project.currentFocus) {
+        const focusEl = document.createElement('div');
+        focusEl.className = 'project-focus';
+        focusEl.textContent = truncate(project.currentFocus, 80);
+        card.appendChild(focusEl);
+      }
+
+      // Last activity
+      if (project.lastActivity) {
+        const actEl = document.createElement('div');
+        actEl.className = 'project-activity';
+        actEl.textContent = truncate(project.lastActivity, 80);
+        card.appendChild(actEl);
+      }
+
+      // Quick-links (only those that exist)
+      const existingLinks = (project.quickLinks || []).filter(ql => ql.exists);
+      if (existingLinks.length > 0) {
+        const qlRow = document.createElement('div');
+        qlRow.className = 'quick-links';
+
+        for (const ql of existingLinks) {
+          const link = document.createElement('a');
+          link.className = 'quick-link';
+          link.href = buildBrowseHash(project.name, ql.path);
+          link.textContent = ql.name;
+
+          link.addEventListener('click', (e) => {
+            e.stopPropagation(); // don't trigger card click
+            e.preventDefault();
+            const hashUrl = buildBrowseHash(project.name, ql.path);
+            history.pushState(null, '', hashUrl);
+            route(window.location.hash);
+          });
+
+          qlRow.appendChild(link);
+        }
+
+        card.appendChild(qlRow);
+      }
+
+      // Card click → project view
+      card.addEventListener('click', () => {
+        const hashUrl = buildProjectHash(project.name, null);
+        history.pushState(null, '', hashUrl);
+        route(window.location.hash);
+      });
+
+      return card;
+    }
+
+    // ----------------------------------------------------------------
+    // Browse view
+    // ----------------------------------------------------------------
+
+    async function enterBrowseView(sourceName, filePath) {
+      // Load sources if not loaded yet
+      if (sourcesList.length === 0) {
+        await loadSources();
+      }
+
+      if (sourcesList.length === 0) {
+        document.getElementById('browse-content').innerHTML =
+          '<p class="content-empty">No sources registered. <a href="/sources" style="color:#58a6ff">Add a source</a> to get started.</p>';
+        return;
+      }
+
+      // Determine which source to use
+      let targetSource = sourceName;
+      if (!targetSource || !sourcesList.some(s => s.name === targetSource)) {
+        targetSource = sourcesList[0].name;
+      }
+
+      if (targetSource !== currentSource) {
+        currentSource = targetSource;
+        document.getElementById('source-select').value = targetSource;
+        await loadTree(targetSource);
+      }
+
+      if (filePath) {
+        lastViewedFile.set(targetSource, filePath);
+        await loadFile(targetSource, filePath);
+      } else {
+        // Try to load the last viewed file, or README, or first file
+        let fileToLoad = lastViewedFile.get(targetSource) || null;
+        if (!fileToLoad) {
+          fileToLoad = findReadme(treeData) || findFirstFile(treeData);
+        }
+        if (fileToLoad) {
+          history.replaceState(null, '', buildBrowseHash(targetSource, fileToLoad));
+          await loadFile(targetSource, fileToLoad);
+        } else {
+          document.getElementById('browse-content').innerHTML =
+            '<p class="content-empty">No markdown files found in this source.</p>';
+          updateBreadcrumb(targetSource, '');
+          history.replaceState(null, '', buildBrowseHash(targetSource, ''));
+        }
+      }
     }
 
     // ----------------------------------------------------------------
@@ -353,15 +922,14 @@
     }
 
     // ----------------------------------------------------------------
-    // File loading
+    // File loading (browse view)
     // ----------------------------------------------------------------
 
     async function loadFile(sourceName, filePath) {
       if (!filePath) return;
 
-      const contentEl = document.getElementById('content');
+      const contentEl = document.getElementById('browse-content');
 
-      // 200ms loading indicator guard
       let loadingTimer = setTimeout(() => {
         contentEl.innerHTML = '<p class="content-loading">Loading...</p>';
       }, 200);
@@ -391,28 +959,24 @@
     }
 
     // ----------------------------------------------------------------
-    // Active file highlighting
+    // Active file highlighting (browse view)
     // ----------------------------------------------------------------
 
     function setActiveFile(filePath) {
-      // Remove existing active highlight
       const prev = document.querySelectorAll('.tree-file.active');
       prev.forEach(el => el.classList.remove('active'));
 
       if (!filePath) return;
 
-      // Find matching file link
       const link = document.querySelector('.tree-file[data-path="' + CSS.escape(filePath) + '"]');
       if (!link) return;
 
       link.classList.add('active');
 
-      // Walk up DOM, expanding all ancestor tree-children containers
       let parent = link.parentElement;
       while (parent) {
         if (parent.classList && parent.classList.contains('tree-children')) {
           parent.hidden = false;
-          // Also un-collapse the corresponding dir button
           const dirBtn = parent.previousElementSibling;
           if (dirBtn && dirBtn.classList.contains('tree-dir')) {
             dirBtn.classList.remove('collapsed');
@@ -425,7 +989,7 @@
     }
 
     // ----------------------------------------------------------------
-    // Tree building
+    // Tree building (browse view)
     // ----------------------------------------------------------------
 
     function buildTreeNode(node, sourceName, depth) {
@@ -434,7 +998,7 @@
       if (node.type === 'file') {
         const a = document.createElement('a');
         a.className = 'tree-file';
-        a.href = buildHashUrl(sourceName, node.path);
+        a.href = buildBrowseHash(sourceName, node.path);
         a.dataset.path = node.path;
         a.dataset.source = sourceName;
         a.style.paddingLeft = (indent + 8) + 'px';
@@ -444,7 +1008,9 @@
         a.addEventListener('click', (e) => {
           e.preventDefault();
           lastViewedFile.set(sourceName, node.path);
-          navigateTo(sourceName, node.path);
+          const hashUrl = buildBrowseHash(sourceName, node.path);
+          history.pushState(null, '', hashUrl);
+          loadFile(sourceName, node.path);
         });
 
         return a;
@@ -465,7 +1031,7 @@
 
         const arrow = document.createElement('span');
         arrow.className = 'tree-dir-arrow';
-        arrow.textContent = '\u25BC';  // ▼
+        arrow.textContent = '\u25BC';
         btn.appendChild(arrow);
 
         const label = document.createElement('span');
@@ -495,7 +1061,7 @@
     }
 
     // ----------------------------------------------------------------
-    // Source loading
+    // Source loading (browse view)
     // ----------------------------------------------------------------
 
     async function loadSources() {
@@ -527,7 +1093,7 @@
           select.value = currentSource;
         }
       } catch (err) {
-        document.getElementById('content').innerHTML =
+        document.getElementById('browse-content').innerHTML =
           '<p class="content-error">Failed to load sources: ' + escapeHtml(err.message) + '</p>';
       }
     }
@@ -562,7 +1128,6 @@
       }
     }
 
-    // Find first .md file in the tree (BFS)
     function findFirstFile(nodes) {
       const queue = [...(nodes || [])];
       while (queue.length) {
@@ -573,7 +1138,6 @@
       return null;
     }
 
-    // Find README.md at any top-level position
     function findReadme(nodes) {
       for (const node of (nodes || [])) {
         if (node.type === 'file' && node.name.toLowerCase() === 'readme.md') {
@@ -586,34 +1150,32 @@
     async function switchSource(sourceName) {
       currentSource = sourceName;
       document.getElementById('source-select').value = sourceName;
+      treeData = null;
 
       await loadTree(sourceName);
 
-      // Decide which file to load
       let fileToLoad = lastViewedFile.get(sourceName) || null;
-
       if (!fileToLoad) {
         fileToLoad = findReadme(treeData) || findFirstFile(treeData);
       }
 
       if (fileToLoad) {
-        // Update hash without adding to history (initial source load)
-        history.replaceState(null, '', buildHashUrl(sourceName, fileToLoad));
+        history.replaceState(null, '', buildBrowseHash(sourceName, fileToLoad));
         await loadFile(sourceName, fileToLoad);
       } else {
-        document.getElementById('content').innerHTML =
+        document.getElementById('browse-content').innerHTML =
           '<p class="content-empty">No markdown files found in this source.</p>';
         updateBreadcrumb(sourceName, '');
-        history.replaceState(null, '', buildHashUrl(sourceName, ''));
+        history.replaceState(null, '', buildBrowseHash(sourceName, ''));
       }
     }
 
     // ----------------------------------------------------------------
-    // Sidebar toggle
+    // Sidebar toggle (browse view)
     // ----------------------------------------------------------------
 
     function toggleSidebar() {
-      document.body.classList.toggle('sidebar-hidden');
+      document.getElementById('view-browse').classList.toggle('sidebar-hidden');
     }
 
     // ----------------------------------------------------------------
@@ -621,59 +1183,32 @@
     // ----------------------------------------------------------------
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // Wire up controls
+      // Wire sidebar toggle
       document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+
+      // Wire source switcher
       document.getElementById('source-select').addEventListener('change', (e) => {
         switchSource(e.target.value);
       });
 
-      // Load sources first
-      await loadSources();
-
-      if (sourcesList.length === 0) {
-        document.getElementById('content').innerHTML =
-          '<p class="content-empty">No sources registered. <a href="/sources" style="color:#58a6ff">Add a source</a> to get started.</p>';
-        return;
-      }
-
-      // Parse the initial hash to determine starting state
-      const { sourceName, filePath } = parseHash(window.location.hash);
-
-      if (sourceName && sourcesList.some(s => s.name === sourceName)) {
-        // Hash specifies a known source
-        currentSource = sourceName;
-        document.getElementById('source-select').value = sourceName;
-        await loadTree(sourceName);
-
-        if (filePath) {
-          lastViewedFile.set(sourceName, filePath);
-          await loadFile(sourceName, filePath);
-        } else {
-          const first = findReadme(treeData) || findFirstFile(treeData);
-          if (first) {
-            history.replaceState(null, '', buildHashUrl(sourceName, first));
-            await loadFile(sourceName, first);
-          }
+      // Wire nav links to use hash routing
+      document.querySelectorAll('.nav-link[data-view]').forEach(link => {
+        if (link.getAttribute('href').startsWith('#')) {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            history.pushState(null, '', href);
+            route(window.location.hash);
+          });
         }
-      } else {
-        // Default to first source
-        await switchSource(sourcesList[0].name);
-      }
+      });
+
+      // Initial route
+      await route(window.location.hash);
 
       // Handle browser back/forward
-      window.addEventListener('popstate', async () => {
-        const { sourceName: src, filePath: fp } = parseHash(window.location.hash);
-        if (!src) return;
-
-        if (src !== currentSource) {
-          currentSource = src;
-          document.getElementById('source-select').value = src;
-          await loadTree(src);
-        }
-
-        if (fp) {
-          await loadFile(src, fp);
-        }
+      window.addEventListener('popstate', () => {
+        route(window.location.hash);
       });
     });
   </script>

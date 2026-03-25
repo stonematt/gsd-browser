@@ -1270,16 +1270,27 @@
         }
       }
 
+      // Merge phases with unstarted ROADMAP phases for pending indicators (DASH-09)
+      const deps = project.dependencies || {};
+      let allPhases = phases;
+      if (Object.keys(deps).length > 0) {
+        const roadmapPhaseNums = Object.keys(deps)
+          .sort((a, b) => parseFloat(a) - parseFloat(b));
+        const existingNums = new Set(phases.map(p => p.numStr));
+        const unstartedPhases = roadmapPhaseNums
+          .filter(num => !existingNums.has(num))
+          .map(num => ({ numStr: num, status: 'pending', planCount: 0, completedPlans: 0, slug: '' }));
+        allPhases = [...phases, ...unstartedPhases]
+          .sort((a, b) => parseFloat(a.numStr) - parseFloat(b.numStr));
+      }
+
       // Mini timeline with phase numbers
-      if (phases.length > 0) {
+      if (allPhases.length > 0) {
         const timeline = document.createElement('div');
         timeline.className = 'mini-timeline';
 
-        // Build a set of dependency relationships for connector styling
-        const deps = project.dependencies || {};
-
-        for (let i = 0; i < phases.length; i++) {
-          const phase = phases[i];
+        for (let i = 0; i < allPhases.length; i++) {
+          const phase = allPhases[i];
           const isActive = phase.status === 'in-progress';
           const statusClass = phase.status === 'complete' ? 'complete'
             : isActive ? 'active' : 'pending';
@@ -1302,10 +1313,10 @@
           timeline.appendChild(phaseEl);
 
           // Connector (not after last)
-          if (i < phases.length - 1) {
+          if (i < allPhases.length - 1) {
             const conn = document.createElement('div');
             // Check if next phase depends on current (shared dependency connector)
-            const nextPhase = phases[i + 1];
+            const nextPhase = allPhases[i + 1];
             const nextDeps = deps[nextPhase.numStr] || nextPhase.dependsOn || [];
             const isDep = nextDeps.includes(phase.numStr);
             conn.className = 'mini-connector' + (isDep ? ' mini-connector--dep' : '');
@@ -1824,6 +1835,16 @@
       }
     }
 
+    function classifyPhaseFile(fileName) {
+      if (fileName.endsWith('-SUMMARY.md')) return 'complete';
+      if (fileName.endsWith('-PLAN.md')) return 'plan';
+      if (fileName.endsWith('-RESEARCH.md')) return 'research';
+      if (fileName.endsWith('-VERIFICATION.md')) return 'verification';
+      if (fileName.endsWith('-CONTEXT.md')) return 'context';
+      if (fileName.endsWith('-VALIDATION.md')) return 'validation';
+      return 'other';
+    }
+
     function isSubPhase(numStr) {
       return String(numStr).includes('.');
     }
@@ -1973,7 +1994,8 @@
 
       for (const fileName of mdFiles) {
         const item = document.createElement('button');
-        item.className = 'phase-file-item';
+        const fileType = classifyPhaseFile(fileName);
+        item.className = 'phase-file-item phase-file-item--' + fileType;
         item.textContent = fileName;
         item.title = fileName;
         item.dataset.fileName = fileName;

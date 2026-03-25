@@ -7,7 +7,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { execSync } = require('node:child_process');
 
-const { createServer, start, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName } = require('../src/server.js');
+const { createServer, start, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parsePlanFrontmatter, buildPlanDetails } = require('../src/server.js');
 const { initRenderer } = require('../src/renderer.js');
 
 let testDir;
@@ -1121,4 +1121,99 @@ test('DASH-05: GET /api/projects/nonexistent/branches returns 404', async () => 
     assert.equal(response.statusCode, 404);
     await fastify.close();
   });
+});
+
+// DASH-12: parsePlanFrontmatter requirements parsing
+test('DASH-12: parsePlanFrontmatter returns requirements array from multi-line YAML list', () => {
+  const content = `---
+phase: 04.5.1-dashboard-ux-polish
+plan: 01
+wave: 1
+depends_on: []
+requirements:
+  - DASH-01
+  - DASH-02
+---
+
+# Plan content
+`;
+  const result = parsePlanFrontmatter(content);
+  assert.deepEqual(result.requirements, ['DASH-01', 'DASH-02']);
+});
+
+test('DASH-12: parsePlanFrontmatter returns empty requirements array when requirements field is absent', () => {
+  const content = `---
+phase: 04.5.1-dashboard-ux-polish
+plan: 01
+wave: 1
+depends_on: []
+---
+
+# Plan content
+`;
+  const result = parsePlanFrontmatter(content);
+  assert.deepEqual(result.requirements, []);
+});
+
+test('DASH-12: parsePlanFrontmatter returns empty requirements array for empty requirements section', () => {
+  const content = `---
+phase: 04.5.1-dashboard-ux-polish
+plan: 01
+requirements:
+---
+
+# Plan content
+`;
+  const result = parsePlanFrontmatter(content);
+  assert.deepEqual(result.requirements, []);
+});
+
+test('DASH-12: parsePlanFrontmatter supports inline array format for requirements', () => {
+  const content = `---
+phase: 04.5.1-dashboard-ux-polish
+plan: 01
+requirements: [DASH-01, DASH-02]
+---
+
+# Plan content
+`;
+  const result = parsePlanFrontmatter(content);
+  assert.deepEqual(result.requirements, ['DASH-01', 'DASH-02']);
+});
+
+test('DASH-12: parsePlanFrontmatter preserves existing wave and dependsOn parsing alongside requirements', () => {
+  const content = `---
+wave: 2
+depends_on: [01-PLAN.md]
+requirements:
+  - DASH-03
+---
+`;
+  const result = parsePlanFrontmatter(content);
+  assert.equal(result.wave, 2);
+  assert.deepEqual(result.dependsOn, ['01-PLAN.md']);
+  assert.deepEqual(result.requirements, ['DASH-03']);
+});
+
+test('DASH-12: buildPlanDetails includes requirements in each returned plan object', async () => {
+  const content = `---
+wave: 1
+depends_on: []
+requirements:
+  - DASH-10
+  - DASH-11
+---
+# Plan
+`;
+  const readFn = async (_file) => content;
+  const result = await buildPlanDetails(readFn, ['01-PLAN.md']);
+  assert.equal(result.length, 1);
+  assert.deepEqual(result[0].requirements, ['DASH-10', 'DASH-11']);
+});
+
+test('DASH-12: buildPlanDetails includes empty requirements array when plan file has no requirements', async () => {
+  const readFn = async (_file) => null;
+  const result = await buildPlanDetails(readFn, ['01-PLAN.md']);
+  assert.equal(result.length, 1);
+  assert.deepEqual(result[0].requirements, []);
 });

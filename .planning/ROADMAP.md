@@ -116,10 +116,12 @@ Plans:
   4. The sidebar visually distinguishes phases with SUMMARY.md (complete) from those without (in-progress/pending)
   5. Plan metadata (wave, dependencies, requirements) renders as a structured card with labeled fields, not raw frontmatter
   6. Requirement tags in plan metadata render as styled chips/badges
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 4.5.1 to break down)
+- [ ] 04.5.1-01-PLAN.md — Server-side requirements parsing in parsePlanFrontmatter + propagation through buildPlanDetails
+- [ ] 04.5.1-02-PLAN.md — Timeline overflow, sub-phase hierarchy, pending phase indicators, sidebar file classification
+- [ ] 04.5.1-03-PLAN.md — Structured plan metadata card with requirement chips/badges
 
 ### Phase 5: Navigation Polish
 **Goal**: Documents with internal links, heading anchors, and Mermaid diagrams navigate and render correctly
@@ -153,6 +155,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 5 -> 6
 | 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
 | 4. Browser UI | 2/2 | Complete   | 2026-03-22 |
 | 4.5. GSD Dashboard | 3/3 | Complete   | 2026-03-24 |
-| 4.5.1. Dashboard UX Polish | 0/TBD | Not started | - |
+| 4.5.1. Dashboard UX Polish | 0/3 | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

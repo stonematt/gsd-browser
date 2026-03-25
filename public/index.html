@@ -633,14 +633,21 @@
       padding: 16px 24px;
       border-bottom: 1px solid #21262d;
       flex-shrink: 0;
-      overflow-x: auto;
+      overflow-x: hidden;
     }
 
     .phase-timeline {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      row-gap: 8px;
       gap: 0;
-      min-width: min-content;
+    }
+
+    .phase-subphase-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
     }
 
     .phase-timeline-empty {
@@ -710,6 +717,70 @@
     }
 
     .phase-node--selected .phase-progress {
+      color: #8b949e;
+    }
+
+    /* Completed phases collapse to dot-only */
+    .phase-node--complete .phase-label,
+    .phase-node--complete .phase-progress {
+      display: none;
+    }
+    .phase-node--complete {
+      padding: 4px 4px;
+    }
+    /* Selected completed phase reveals its label */
+    .phase-node--selected.phase-node--complete .phase-label {
+      display: inline;
+    }
+
+    /* Sub-phase visual hierarchy */
+    .phase-node--subphase {
+      margin-left: 12px;
+      transform: scale(0.9);
+      opacity: 0.9;
+    }
+    .phase-node--subphase .phase-dot {
+      width: 12px;
+      height: 12px;
+    }
+
+    /* Mini sub-phase visual hierarchy */
+    .mini-phase--subphase {
+      margin-left: -2px;
+    }
+    .mini-phase--subphase .mini-dot {
+      width: 6px;
+      height: 6px;
+    }
+    .mini-phase--subphase .mini-num {
+      font-size: 9px;
+    }
+
+    /* Sidebar file type indicators */
+    .phase-file-item--complete::before {
+      content: '\2713 ';
+      color: #3fb950;
+      font-weight: 600;
+    }
+    .phase-file-item--plan::before {
+      content: '\25B6 ';
+      color: #58a6ff;
+    }
+    .phase-file-item--research::before {
+      content: '\25CE ';
+      color: #8b949e;
+    }
+    .phase-file-item--verification::before {
+      content: '\2713\2713 ';
+      color: #3fb950;
+      font-weight: 600;
+    }
+    .phase-file-item--context::before {
+      content: '\25C7 ';
+      color: #8b949e;
+    }
+    .phase-file-item--validation::before {
+      content: '\25C9 ';
       color: #8b949e;
     }
 
@@ -1214,7 +1285,9 @@
             : isActive ? 'active' : 'pending';
 
           const phaseEl = document.createElement('div');
-          phaseEl.className = 'mini-phase' + (isActive ? ' mini-phase--active' : '');
+          let miniCls = 'mini-phase' + (isActive ? ' mini-phase--active' : '');
+          if (isSubPhase(phase.numStr)) miniCls += ' mini-phase--subphase';
+          phaseEl.className = miniCls;
           phaseEl.title = phase.numStr + ': ' + phase.slug + ' (' + phase.completedPlans + '/' + phase.planCount + ' plans)';
 
           const dot = document.createElement('div');
@@ -1751,6 +1824,67 @@
       }
     }
 
+    function isSubPhase(numStr) {
+      return String(numStr).includes('.');
+    }
+
+    function getParentPhaseNum(numStr) {
+      return String(numStr).split('.')[0];
+    }
+
+    function groupPhases(phases) {
+      const groups = [];
+      for (const phase of phases) {
+        if (!isSubPhase(phase.numStr)) {
+          groups.push({ parent: phase, children: [] });
+        } else {
+          const parentNum = getParentPhaseNum(phase.numStr);
+          const group = groups.find(g => g.parent.numStr === parentNum);
+          if (group) {
+            group.children.push(phase);
+          } else {
+            // Orphaned sub-phase — render as peer (fallback)
+            groups.push({ parent: phase, children: [] });
+          }
+        }
+      }
+      return groups;
+    }
+
+    function makePhaseNode(phase, extraClasses) {
+      const node = document.createElement('div');
+      let cls = 'phase-node';
+      if (phase.status === 'complete') cls += ' phase-node--complete';
+      if (extraClasses) cls += ' ' + extraClasses;
+      node.className = cls;
+      node.dataset.phaseNum = phase.numStr;
+
+      // Dot
+      const dotClass = phase.status === 'complete'
+        ? 'phase-dot--complete'
+        : phase.status === 'in-progress'
+          ? 'phase-dot--active'
+          : 'phase-dot--pending';
+      const dot = document.createElement('div');
+      dot.className = 'phase-dot ' + dotClass;
+      node.appendChild(dot);
+
+      // Label: phase number + slug name (never truncate)
+      const label = document.createElement('span');
+      label.className = 'phase-label';
+      label.textContent = phase.numStr + ': ' + (phase.slug || 'Phase ' + phase.numStr);
+      label.title = 'Phase ' + phase.numStr + (phase.slug ? ' — ' + phase.slug : '');
+      node.appendChild(label);
+
+      // Progress: "X/Y plans"
+      const progress = document.createElement('span');
+      progress.className = 'phase-progress';
+      progress.textContent = (phase.completedPlans || 0) + '/' + (phase.planCount || 0) + ' plans';
+      node.appendChild(progress);
+
+      return node;
+    }
+
     function renderTimeline(phases) {
       const container = document.getElementById('phase-timeline');
       container.innerHTML = '';
@@ -1760,48 +1894,45 @@
         return;
       }
 
-      for (let i = 0; i < phases.length; i++) {
-        const phase = phases[i];
+      const groups = groupPhases(phases);
 
-        // Phase node
-        const node = document.createElement('div');
-        node.className = 'phase-node';
-        node.dataset.phaseNum = phase.numStr;
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
 
-        // Dot
-        const dotClass = phase.status === 'complete'
-          ? 'phase-dot--complete'
-          : phase.status === 'in-progress'
-            ? 'phase-dot--active'
-            : 'phase-dot--pending';
-        const dot = document.createElement('div');
-        dot.className = 'phase-dot ' + dotClass;
-        node.appendChild(dot);
+        if (group.children.length > 0) {
+          // Wrap parent + children in a subphase group
+          const wrapper = document.createElement('div');
+          wrapper.className = 'phase-subphase-group';
 
-        // Label: phase number + slug name (never truncate)
-        const label = document.createElement('span');
-        label.className = 'phase-label';
-        label.textContent = phase.numStr + ': ' + (phase.slug || 'Phase ' + phase.numStr);
-        label.title = 'Phase ' + phase.numStr + (phase.slug ? ' — ' + phase.slug : '');
-        node.appendChild(label);
+          const parentNode = makePhaseNode(group.parent, null);
+          parentNode.addEventListener('click', () => {
+            const sourcePath = container.dataset.sourcePath || null;
+            selectPhase(group.parent, sourcePath);
+          });
+          wrapper.appendChild(parentNode);
 
-        // Progress: "X/Y plans"
-        const progress = document.createElement('span');
-        progress.className = 'phase-progress';
-        progress.textContent = (phase.completedPlans || 0) + '/' + (phase.planCount || 0) + ' plans';
-        node.appendChild(progress);
+          for (const child of group.children) {
+            const childNode = makePhaseNode(child, 'phase-node--subphase');
+            childNode.addEventListener('click', () => {
+              const sourcePath = container.dataset.sourcePath || null;
+              selectPhase(child, sourcePath);
+            });
+            wrapper.appendChild(childNode);
+          }
 
-        // Click handler — store sourcePath on the node for use in selectPhase
-        node.addEventListener('click', () => {
-          // Retrieve sourcePath from the detail response stored on container
-          const sourcePath = container.dataset.sourcePath || null;
-          selectPhase(phase, sourcePath);
-        });
+          container.appendChild(wrapper);
+        } else {
+          // Single node (no children)
+          const node = makePhaseNode(group.parent, null);
+          node.addEventListener('click', () => {
+            const sourcePath = container.dataset.sourcePath || null;
+            selectPhase(group.parent, sourcePath);
+          });
+          container.appendChild(node);
+        }
 
-        container.appendChild(node);
-
-        // Connector (not after last)
-        if (i < phases.length - 1) {
+        // Connector between groups (not after last)
+        if (i < groups.length - 1) {
           const conn = document.createElement('div');
           conn.className = 'phase-connector';
           container.appendChild(conn);

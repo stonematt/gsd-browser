@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Completed 04.5.1-02-PLAN.md (checkpoint at Task 3 — awaiting visual verification)
-last_updated: "2026-03-25T19:58:03.182Z"
+stopped_at: Completed 04.5.1-02-PLAN.md
+last_updated: "2026-03-25T21:25:46.636Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 8
@@ -63,6 +63,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5-gsd-dashboard P02 | 3min | 1 tasks | 2 files |
 | Phase 04.5.1-dashboard-ux-polish P01 | 1min | 1 tasks | 2 files |
 | Phase 04.5.1-dashboard-ux-polish P02 | 15min | 2 tasks | 1 files |
+| Phase 04.5.1-dashboard-ux-polish P02 | 20min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,9 @@ Recent decisions affecting current work:
 - [Phase 04.5.1-02]: groupPhases() wraps parent+children in .phase-subphase-group; connector only between groups (not within)
 - [Phase 04.5.1-02]: Pending phases computed by diffing project.dependencies keys against phaseStatus; graceful fallback if empty
 - [Phase 04.5.1-02]: classifyPhaseFile() maps filename suffix to CSS class; ::before pseudo-elements inject status icons
+- [Phase 04.5.1-02]: parseRoadmapPhaseNames() added to server.js; phaseNames map passed in detail API response for name-labeled timeline
+- [Phase 04.5.1-02]: Card mini-timeline dedup uses parseFloat() for numStr comparison to handle zero-padded phase numbers
+- [Phase 04.5.1-02]: In-progress phase gets blue label + glow ring — matches active selection visual language
 
 ### Roadmap Evolution
 
@@ -129,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T19:58:03.180Z
-Stopped at: Completed 04.5.1-02-PLAN.md (checkpoint at Task 3 — awaiting visual verification)
+Last session: 2026-03-25T21:25:46.634Z
+Stopped at: Completed 04.5.1-02-PLAN.md
 Resume file: None

@@ -104,6 +104,22 @@ function parseRoadmapDeps(content) {
 }
 
 /**
+ * Parse ROADMAP.md for phase names.
+ * Returns { "1": "foundation", "2": "rendering", ... }
+ */
+function parseRoadmapPhaseNames(content) {
+  const names = {};
+  const lines = content.split('\n');
+  for (const line of lines) {
+    const m = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)?)\s*:\s*(.+)/);
+    if (m) {
+      names[m[1]] = m[2].replace(/\s*\(INSERTED\)\s*/, '').trim();
+    }
+  }
+  return names;
+}
+
+/**
  * Parse PLAN.md YAML frontmatter for wave, depends_on, and requirements fields.
  *
  * @param {string} content - PLAN.md file content
@@ -834,11 +850,13 @@ function createServer(sources) {
     }
     phases = await buildPhaseListFromReader(reader);
 
-    // Parse ROADMAP.md for phase dependencies
+    // Parse ROADMAP.md for phase dependencies and names
     let dependencies = {};
+    let phaseNames = {};
     const roadmapSrc = await reader.readFile('.planning/ROADMAP.md');
     if (roadmapSrc) {
       dependencies = parseRoadmapDeps(roadmapSrc);
+      phaseNames = parseRoadmapPhaseNames(roadmapSrc);
       for (const phase of phases) {
         phase.dependsOn = dependencies[phase.numStr] || [];
       }
@@ -851,6 +869,8 @@ function createServer(sources) {
       source: { name: source.name, path: source.path },
       state,
       phases,
+      dependencies,
+      phaseNames,
       branch: branch || null,
       branches,
     });

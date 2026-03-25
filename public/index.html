@@ -733,6 +733,15 @@
       display: inline;
     }
 
+    /* In-progress phase always shows label and has active ring */
+    .phase-node--in-progress .phase-label {
+      color: #58a6ff;
+      font-weight: 600;
+    }
+    .phase-node--in-progress .phase-dot {
+      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+    }
+
     /* Sub-phase visual hierarchy */
     .phase-node--subphase {
       margin-left: 12px;
@@ -1276,9 +1285,9 @@
       if (Object.keys(deps).length > 0) {
         const roadmapPhaseNums = Object.keys(deps)
           .sort((a, b) => parseFloat(a) - parseFloat(b));
-        const existingNums = new Set(phases.map(p => p.numStr));
+        const existingFloats = new Set(phases.map(p => parseFloat(p.numStr)));
         const unstartedPhases = roadmapPhaseNums
-          .filter(num => !existingNums.has(num))
+          .filter(num => !existingFloats.has(parseFloat(num)))
           .map(num => ({ numStr: num, status: 'pending', planCount: 0, completedPlans: 0, slug: '' }));
         allPhases = [...phases, ...unstartedPhases]
           .sort((a, b) => parseFloat(a.numStr) - parseFloat(b.numStr));
@@ -1805,9 +1814,17 @@
           branchBar.hidden = true;
         }
 
-        // Render timeline
+        // Render timeline — merge in pending phases from roadmap
         const phases = data.phases || [];
-        renderTimeline(phases);
+        const deps = data.dependencies || {};
+        const pNames = data.phaseNames || {};
+        const existingFloats = new Set(phases.map(p => parseFloat(p.numStr)));
+        const pendingPhases = Object.keys(deps)
+          .filter(num => !existingFloats.has(parseFloat(num)))
+          .map(num => ({ numStr: num, status: 'pending', slug: pNames[num] || '', files: [], planDetails: [] }));
+        const allTimelinePhases = [...phases, ...pendingPhases]
+          .sort((a, b) => parseFloat(a.numStr) - parseFloat(b.numStr));
+        renderTimeline(allTimelinePhases);
 
         // Auto-select phase: first in-progress, then last complete, then first
         let autoPhase = phases.find(p => p.status === 'in-progress');
@@ -1876,6 +1893,7 @@
       const node = document.createElement('div');
       let cls = 'phase-node';
       if (phase.status === 'complete') cls += ' phase-node--complete';
+      if (phase.status === 'in-progress') cls += ' phase-node--in-progress';
       if (extraClasses) cls += ' ' + extraClasses;
       node.className = cls;
       node.dataset.phaseNum = phase.numStr;

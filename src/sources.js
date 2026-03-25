@@ -49,10 +49,10 @@ async function loadConfig(configPath) {
 async function saveConfig(config, configPath) {
   const filePath = configPath || getConfigPath();
   const dir = path.dirname(filePath);
-  fs.mkdirSync(dir, { recursive: true });
+  await fsPromises.mkdir(dir, { recursive: true });
   const tmpPath = filePath + '.tmp';
-  fs.writeFileSync(tmpPath, JSON.stringify(config, null, 2), 'utf8');
-  fs.renameSync(tmpPath, filePath);
+  await fsPromises.writeFile(tmpPath, JSON.stringify(config, null, 2), 'utf8');
+  await fsPromises.rename(tmpPath, filePath);
 }
 
 /**

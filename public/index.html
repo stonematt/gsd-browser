@@ -374,6 +374,9 @@
       padding: 24px;
     }
 
+    .dash-section-gap { margin-top: 24px; }
+    .dash-bottom-pad { height: 24px; }
+
     /* ------------------------------------------------------------------ */
     /* Browse view                                                          */
     /* ------------------------------------------------------------------ */
@@ -917,7 +920,6 @@
     let sourcesList = [];
     const lastViewedFile = new Map();
     let treeData = null;
-    let dashboardLoaded = false;
     let cachedDashboardData = null;
 
     // ----------------------------------------------------------------
@@ -929,13 +931,25 @@
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
     }
 
-    function truncate(str, maxLen) {
-      if (!str) return '';
-      if (str.length <= maxLen) return str;
-      return str.slice(0, maxLen - 1) + '\u2026';
+    /** Fetch a URL, check status, parse JSON. Throws on non-ok response. */
+    async function apiFetch(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw Object.assign(new Error('HTTP ' + res.status), { status: res.status });
+      return res.json();
+    }
+
+    /** Show a loading indicator inside an element (delayed by ms to avoid flash). */
+    function showLoading(el, className, delayMs = 200) {
+      return setTimeout(() => { el.innerHTML = '<p class="' + className + '">Loading...</p>'; }, delayMs);
+    }
+
+    /** Show an error message inside an element. */
+    function showError(el, className, message) {
+      el.innerHTML = '<p class="' + className + '">' + escapeHtml(message) + '</p>';
     }
 
     // ----------------------------------------------------------------
@@ -1031,31 +1045,22 @@
 
     async function loadDashboard() {
       const viewEl = document.getElementById('view-dashboard');
-
-      let loadingTimer = setTimeout(() => {
-        viewEl.innerHTML = '<p class="dash-loading">Loading...</p>';
-      }, 200);
+      const timer = showLoading(viewEl, 'dash-loading');
 
       try {
-        const res = await fetch('/api/dashboard');
-        clearTimeout(loadingTimer);
-
-        if (!res.ok) {
-          viewEl.innerHTML = '<p class="dash-error">Failed to load dashboard (HTTP ' + escapeHtml(String(res.status)) + ')</p>';
-          return;
-        }
-
-        const data = await res.json();
+        const data = await apiFetch('/api/dashboard');
+        clearTimeout(timer);
         cachedDashboardData = data;
         renderDashboard(viewEl, data.projects || [], data.other || []);
       } catch (err) {
-        clearTimeout(loadingTimer);
-        viewEl.innerHTML = '<p class="dash-error">Error loading dashboard: ' + escapeHtml(err.message) + '</p>';
+        clearTimeout(timer);
+        showError(viewEl, 'dash-error', 'Error loading dashboard: ' + err.message);
       }
     }
 
     function renderDashboard(container, projects, other) {
       container.innerHTML = '';
+      const frag = document.createDocumentFragment();
 
       // GSD Projects section
       if (projects.length > 0) {
@@ -1075,7 +1080,7 @@
         }
 
         section.appendChild(grid);
-        container.appendChild(section);
+        frag.appendChild(section);
       } else {
         const section = document.createElement('div');
         section.className = 'dash-section';
@@ -1083,14 +1088,13 @@
         empty.className = 'dash-empty';
         empty.innerHTML = 'No GSD projects found. <a href="/sources" style="color:#58a6ff">Add a source</a> to get started.';
         section.appendChild(empty);
-        container.appendChild(section);
+        frag.appendChild(section);
       }
 
       // Other Sources section
       if (other.length > 0) {
         const section = document.createElement('div');
-        section.className = 'dash-section';
-        section.style.marginTop = '24px';
+        section.className = 'dash-section dash-section-gap';
 
         const title = document.createElement('div');
         title.className = 'dash-section-title';
@@ -1124,13 +1128,15 @@
         }
 
         section.appendChild(list);
-        container.appendChild(section);
+        frag.appendChild(section);
       }
 
       // Bottom padding
       const pad = document.createElement('div');
-      pad.style.height = '24px';
-      container.appendChild(pad);
+      pad.className = 'dash-bottom-pad';
+      frag.appendChild(pad);
+
+      container.appendChild(frag);
     }
 
     function renderProjectCard(project) {
@@ -1287,8 +1293,7 @@
       // Lazy-fetch dashboard data if not cached
       if (!cachedDashboardData) {
         try {
-          const res = await fetch('/api/dashboard');
-          if (res.ok) cachedDashboardData = await res.json();
+          cachedDashboardData = await apiFetch('/api/dashboard');
         } catch { /* ignore */ }
       }
       if (!cachedDashboardData) return;
@@ -1425,32 +1430,27 @@
       if (!filePath) return;
 
       const contentEl = document.getElementById('browse-content');
-
-      let loadingTimer = setTimeout(() => {
-        contentEl.innerHTML = '<p class="content-loading">Loading...</p>';
-      }, 200);
+      const timer = showLoading(contentEl, 'content-loading');
 
       try {
         const url = '/render?path=' + encodeURIComponent(filePath) + '&fragment=true';
         const res = await fetch(url);
-
-        clearTimeout(loadingTimer);
+        clearTimeout(timer);
 
         if (!res.ok) {
-          contentEl.innerHTML = '<p class="content-error">Failed to load file (HTTP ' + escapeHtml(String(res.status)) + ')</p>';
+          showError(contentEl, 'content-error', 'Failed to load file (HTTP ' + res.status + ')');
           return;
         }
 
-        const html = await res.text();
-        contentEl.innerHTML = html;
+        contentEl.innerHTML = await res.text();
         contentEl.scrollTop = 0;
 
         updateBreadcrumb(sourceName, filePath);
         lastViewedFile.set(sourceName, filePath);
         setActiveFile(filePath);
       } catch (err) {
-        clearTimeout(loadingTimer);
-        contentEl.innerHTML = '<p class="content-error">Error: ' + escapeHtml(err.message) + '</p>';
+        clearTimeout(timer);
+        showError(contentEl, 'content-error', 'Error: ' + err.message);
       }
     }
 
@@ -1562,9 +1562,7 @@
 
     async function loadSources() {
       try {
-        const res = await fetch('/api/sources');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
+        const data = await apiFetch('/api/sources');
         sourcesList = (data.sources || []).filter(s => s.available);
 
         const select = document.getElementById('source-select');
@@ -1589,8 +1587,7 @@
           select.value = currentSource;
         }
       } catch (err) {
-        document.getElementById('browse-content').innerHTML =
-          '<p class="content-error">Failed to load sources: ' + escapeHtml(err.message) + '</p>';
+        showError(document.getElementById('browse-content'), 'content-error', 'Failed to load sources: ' + err.message);
       }
     }
 
@@ -1599,9 +1596,7 @@
       treeEl.textContent = '';
 
       try {
-        const res = await fetch('/api/sources/' + encodeURIComponent(sourceName) + '/tree');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
+        const data = await apiFetch('/api/sources/' + encodeURIComponent(sourceName) + '/tree');
         treeData = data.tree;
 
         if (!treeData || treeData.length === 0) {
@@ -1612,10 +1607,12 @@
           return;
         }
 
+        const frag = document.createDocumentFragment();
         for (const node of treeData) {
           const el = buildTreeNode(node, sourceName, 0);
-          if (el) treeEl.appendChild(el);
+          if (el) frag.appendChild(el);
         }
+        treeEl.appendChild(frag);
       } catch (err) {
         const msg = document.createElement('p');
         msg.className = 'tree-empty';
@@ -1701,15 +1698,7 @@
         let url = '/api/projects/' + encodeURIComponent(sourceName) + '/detail';
         if (branch) url += '?branch=' + encodeURIComponent(branch);
 
-        const res = await fetch(url);
-        if (!res.ok) {
-          document.getElementById('phase-timeline').innerHTML =
-            '<span class="phase-timeline-empty">Failed to load project (HTTP ' + escapeHtml(String(res.status)) + ')</span>';
-          document.getElementById('phase-content').innerHTML = '';
-          return;
-        }
-
-        const data = await res.json();
+        const data = await apiFetch(url);
 
         // Set title
         document.getElementById('project-title').textContent = data.source ? data.source.name : sourceName;
@@ -1889,7 +1878,7 @@
         const res = await fetch(url);
 
         if (!res.ok) {
-          contentEl.innerHTML = '<p class="phase-content-error">Failed to load file (HTTP ' + escapeHtml(String(res.status)) + ')</p>';
+          showError(contentEl, 'phase-content-error', 'Failed to load file (HTTP ' + res.status + ')');
           return;
         }
 
@@ -1914,7 +1903,7 @@
         contentEl.innerHTML = metaHtml + html;
         contentEl.scrollTop = 0;
       } catch (err) {
-        contentEl.innerHTML = '<p class="phase-content-error">Error: ' + escapeHtml(err.message) + '</p>';
+        showError(contentEl, 'phase-content-error', 'Error: ' + err.message);
       }
     }
 

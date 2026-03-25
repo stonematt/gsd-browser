@@ -146,6 +146,60 @@ function parsePhaseDir(dirName) {
   };
 }
 
+// Regex constants for plan file patterns
+const PLAN_RE = /\d+-\d+-PLAN\.md$/;
+const SUMMARY_RE = /\d+-\d+-SUMMARY\.md$/;
+
+/**
+ * Classify phase directory entries into plans, summaries, and verification flag.
+ *
+ * @param {string[]} entries - File names in a phase directory
+ * @returns {{ plans: string[], summaries: string[], hasVerification: boolean }}
+ */
+function classifyPhaseFiles(entries) {
+  return {
+    plans: entries.filter(f => PLAN_RE.test(f)),
+    summaries: entries.filter(f => SUMMARY_RE.test(f)),
+    hasVerification: entries.some(f => f.endsWith('-VERIFICATION.md')),
+  };
+}
+
+/**
+ * Determine phase status from plan/summary counts and verification presence.
+ *
+ * @param {number} planCount
+ * @param {number} completedPlans
+ * @param {boolean} hasVerification
+ * @returns {'complete'|'in-progress'|'pending'}
+ */
+function determinePhaseStatus(planCount, completedPlans, hasVerification) {
+  if (hasVerification || (planCount > 0 && completedPlans >= planCount)) {
+    return 'complete';
+  }
+  if (planCount > 0) {
+    return 'in-progress';
+  }
+  return 'pending';
+}
+
+/**
+ * Build plan details (wave/dependsOn) from plan files using a reader function.
+ *
+ * @param {(filename: string) => Promise<string|null>} readFileFn - Reads a plan file and returns content or null
+ * @param {string[]} planFiles - Plan file names
+ * @returns {Promise<Array<{ file: string, wave: number|null, dependsOn: string[] }>>}
+ */
+async function buildPlanDetails(readFileFn, planFiles) {
+  return Promise.all(planFiles.map(async (planFile) => {
+    const content = await readFileFn(planFile);
+    if (content) {
+      const fm = parsePlanFrontmatter(content);
+      return { file: planFile, wave: fm.wave, dependsOn: fm.dependsOn };
+    }
+    return { file: planFile, wave: null, dependsOn: [] };
+  }));
+}
+
 /**
  * Get phase status info by scanning a phase directory for PLAN.md, SUMMARY.md, VERIFICATION.md files.
  *
@@ -160,30 +214,12 @@ async function getPhaseInfo(phaseDirPath) {
     return null;
   }
 
-  const plans = entries.filter(f => /\d+-\d+-PLAN\.md$/.test(f));
-  const summaries = entries.filter(f => /\d+-\d+-SUMMARY\.md$/.test(f));
-  const hasVerification = entries.some(f => f.endsWith('-VERIFICATION.md'));
-
-  let status;
-  if (hasVerification || (plans.length > 0 && summaries.length >= plans.length)) {
-    status = 'complete';
-  } else if (plans.length > 0) {
-    status = 'in-progress';
-  } else {
-    status = 'pending';
-  }
-
-  // Parse plan frontmatter for wave/depends_on info
-  const planDetails = [];
-  for (const planFile of plans) {
-    try {
-      const content = await fs.readFile(path.join(phaseDirPath, planFile), 'utf8');
-      const fm = parsePlanFrontmatter(content);
-      planDetails.push({ file: planFile, wave: fm.wave, dependsOn: fm.dependsOn });
-    } catch {
-      planDetails.push({ file: planFile, wave: null, dependsOn: [] });
-    }
-  }
+  const { plans, summaries, hasVerification } = classifyPhaseFiles(entries);
+  const status = determinePhaseStatus(plans.length, summaries.length, hasVerification);
+  const planDetails = await buildPlanDetails(
+    async (f) => { try { return await fs.readFile(path.join(phaseDirPath, f), 'utf8'); } catch { return null; } },
+    plans
+  );
 
   return {
     planCount: plans.length,
@@ -284,25 +320,63 @@ async function buildPhaseList(sourcePath) {
     return [];
   }
 
-  const phases = [];
-  for (const dir of dirs) {
-    const parsed = parsePhaseDir(dir);
-    if (!parsed) continue;
-    const info = await getPhaseInfo(path.join(phasesDir, dir));
-    if (!info) continue;
-    phases.push({
-      num: parsed.num,
-      numStr: parsed.numStr,
-      slug: parsed.slug,
-      status: info.status,
-      planCount: info.planCount,
-      completedPlans: info.completedPlans,
-      files: info.files,
-      planDetails: info.planDetails || [],
-    });
-  }
+  const parsedDirs = dirs.map(dir => ({ dir, parsed: parsePhaseDir(dir) })).filter(d => d.parsed);
+  const phaseResults = await Promise.all(
+    parsedDirs.map(async ({ dir, parsed }) => {
+      const info = await getPhaseInfo(path.join(phasesDir, dir));
+      if (!info) return null;
+      return {
+        num: parsed.num,
+        numStr: parsed.numStr,
+        slug: parsed.slug,
+        status: info.status,
+        planCount: info.planCount,
+        completedPlans: info.completedPlans,
+        files: info.files,
+        planDetails: info.planDetails || [],
+      };
+    })
+  );
+  const phases = phaseResults.filter(Boolean);
 
   // Sort by numeric phase number (handles 04.5 correctly)
+  phases.sort((a, b) => a.num - b.num);
+  return phases;
+}
+
+/**
+ * Build a phase list using abstract reader functions, allowing both filesystem
+ * and git-branch paths to share the same logic.
+ *
+ * @param {{ listDir: (p: string) => Promise<string[]>, readFile: (p: string) => Promise<string|null> }} reader
+ * @returns {Promise<Array>}
+ */
+async function buildPhaseListFromReader(reader) {
+  const dirs = await reader.listDir('.planning/phases');
+  const parsedDirs = dirs.map(dir => ({ dir, parsed: parsePhaseDir(dir) })).filter(d => d.parsed);
+  const phaseResults = await Promise.all(
+    parsedDirs.map(async ({ dir, parsed }) => {
+      const entries = await reader.listDir(`.planning/phases/${dir}`);
+      if (!entries.length) return null;
+      const { plans, summaries, hasVerification } = classifyPhaseFiles(entries);
+      const status = determinePhaseStatus(plans.length, summaries.length, hasVerification);
+      const planDetails = await buildPlanDetails(
+        (f) => reader.readFile(`.planning/phases/${dir}/${f}`),
+        plans
+      );
+      return {
+        num: parsed.num,
+        numStr: parsed.numStr,
+        slug: parsed.slug,
+        status,
+        planCount: plans.length,
+        completedPlans: summaries.length,
+        files: entries,
+        planDetails,
+      };
+    })
+  );
+  const phases = phaseResults.filter(Boolean);
   phases.sort((a, b) => a.num - b.num);
   return phases;
 }
@@ -322,16 +396,16 @@ async function buildQuickLinks(sourcePath) {
     { name: 'ROADMAP.md', path: '.planning/ROADMAP.md' },
   ];
 
-  const result = [];
-  for (const link of links) {
-    let exists = false;
-    try {
-      await fs.access(path.join(sourcePath, link.path));
-      exists = true;
-    } catch { /* file doesn't exist */ }
-    result.push({ name: link.name, path: link.path, exists });
-  }
-  return result;
+  return Promise.all(
+    links.map(async (link) => {
+      let exists = false;
+      try {
+        await fs.access(path.join(sourcePath, link.path));
+        exists = true;
+      } catch { /* file doesn't exist */ }
+      return { name: link.name, path: link.path, exists };
+    })
+  );
 }
 
 /**
@@ -454,24 +528,22 @@ function createServer(sources) {
     reply.header('Cache-Control', 'no-store');
   });
 
-  // GET /api/sources — list all registered sources (fresh from config each time)
-  fastify.get('/api/sources', {
+  // Reusable route options that override CSP to the management (inline-script) policy
+  const managementCSP = {
     onSend: async (request, reply, payload) => {
       reply.header('Content-Security-Policy', MANAGEMENT_CSP);
       return payload;
     }
-  }, async (request, reply) => {
+  };
+
+  // GET /api/sources — list all registered sources (fresh from config each time)
+  fastify.get('/api/sources', managementCSP, async (request, reply) => {
     const sources = await listSources();
     return reply.send({ sources });
   });
 
   // POST /api/sources — add a new source
-  fastify.post('/api/sources', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.post('/api/sources', managementCSP, async (request, reply) => {
     const body = request.body || {};
     const targetPath = body.path;
     const name = body.name;
@@ -497,12 +569,7 @@ function createServer(sources) {
   });
 
   // GET /api/sources/:name/files — list markdown files in a source, grouped by priority
-  fastify.get('/api/sources/:name/files', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.get('/api/sources/:name/files', managementCSP, async (request, reply) => {
     const sourceName = request.params.name;
     const sources = await listSources();
     const source = sources.find(s => s.name === sourceName);
@@ -570,12 +637,7 @@ function createServer(sources) {
   });
 
   // GET /api/sources/:name/tree — return a recursive JSON tree of .md files for a source
-  fastify.get('/api/sources/:name/tree', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.get('/api/sources/:name/tree', managementCSP, async (request, reply) => {
     const sourceName = request.params.name;
     const source = activeSources.find(s => s.name === sourceName);
     if (!source) return reply.code(404).send({ error: `Source not found: ${sourceName}` });
@@ -584,12 +646,7 @@ function createServer(sources) {
   });
 
   // PATCH /api/sources/:name — update source name or path
-  fastify.patch('/api/sources/:name', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.patch('/api/sources/:name', managementCSP, async (request, reply) => {
     const sourceName = request.params.name;
     const { name: newName, path: newPath } = request.body || {};
 
@@ -631,12 +688,7 @@ function createServer(sources) {
   });
 
   // DELETE /api/sources/:identifier — remove a source by name or path
-  fastify.delete('/api/sources/:identifier', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.delete('/api/sources/:identifier', managementCSP, async (request, reply) => {
     const identifier = request.params.identifier;
     const result = await removeSource(identifier);
 
@@ -663,12 +715,7 @@ function createServer(sources) {
   // ============================================================
 
   // GET /api/dashboard — aggregate GSD project data for all registered sources
-  fastify.get('/api/dashboard', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.get('/api/dashboard', managementCSP, async (request, reply) => {
     // Use activeSources (closure) for consistency with tree/file endpoints.
     // activeSources is refreshed on add/remove via POST/DELETE /api/sources.
     const allSources = activeSources;
@@ -718,14 +765,14 @@ function createServer(sources) {
         path: source.path,
         isGsd: true,
         progress: {
-          percent: parseInt(state && state.progress && state.progress.percent ? state.progress.percent : 0),
-          completed_phases: parseInt(state && state.progress && state.progress.completed_phases ? state.progress.completed_phases : 0),
-          total_phases: parseInt(state && state.progress && state.progress.total_phases ? state.progress.total_phases : 0),
+          percent: parseInt(state?.progress?.percent ?? 0),
+          completed_phases: parseInt(state?.progress?.completed_phases ?? 0),
+          total_phases: parseInt(state?.progress?.total_phases ?? 0),
         },
         currentPhase: currentPhaseName,
-        currentFocus: (state && state.status) ? state.status : '',
-        lastActivity: (state && state.last_activity) ? state.last_activity : '',
-        milestone: (state && state.milestone) ? state.milestone : '',
+        currentFocus: state?.status ?? '',
+        lastActivity: state?.last_activity ?? '',
+        milestone: state?.milestone ?? '',
         quickLinks,
         phaseStatus: phases,
         dependencies,
@@ -736,12 +783,7 @@ function createServer(sources) {
   });
 
   // GET /api/projects/:name/detail — detailed project info including phases and branches
-  fastify.get('/api/projects/:name/detail', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.get('/api/projects/:name/detail', managementCSP, async (request, reply) => {
     const sourceName = request.params.name;
     const source = activeSources.find(s => s.name === sourceName);
 
@@ -753,60 +795,27 @@ function createServer(sources) {
     let state = null;
     let phases = [];
 
-    if (branch && isValidBranchName(branch)) {
-      // Read from the specified branch via git
-      const stateContent = await readFileFromBranch(source.path, branch, '.planning/STATE.md');
-      if (stateContent) {
-        state = parseStateMd(stateContent);
-      }
-      // List phase dirs from the branch
-      const phaseDirEntries = await listDirFromBranch(source.path, branch, '.planning/phases');
-      for (const dir of phaseDirEntries) {
-        const parsed = parsePhaseDir(dir);
-        if (!parsed) continue;
-        // Count plan/summary files from git ls-tree
-        const phaseFiles = await listDirFromBranch(source.path, branch, `.planning/phases/${dir}`);
-        const planCount = phaseFiles.filter(f => /\d+-\d+-PLAN\.md$/.test(f)).length;
-        const completedPlans = phaseFiles.filter(f => /\d+-\d+-SUMMARY\.md$/.test(f)).length;
-        const hasVerification = phaseFiles.some(f => f.endsWith('-VERIFICATION.md'));
-        let status;
-        if (hasVerification || (planCount > 0 && completedPlans >= planCount)) {
-          status = 'complete';
-        } else if (planCount > 0) {
-          status = 'in-progress';
-        } else {
-          status = 'pending';
+    // Build a reader abstraction: git-branch or filesystem
+    const useBranch = branch && isValidBranchName(branch);
+    const reader = useBranch
+      ? {
+          readFile: (p) => readFileFromBranch(source.path, branch, p),
+          listDir: (p) => listDirFromBranch(source.path, branch, p),
         }
-        // Parse plan frontmatter from branch
-        const planFiles = phaseFiles.filter(f => /\d+-\d+-PLAN\.md$/.test(f));
-        const planDetails = [];
-        for (const pf of planFiles) {
-          const planContent = await readFileFromBranch(source.path, branch, `.planning/phases/${dir}/${pf}`);
-          if (planContent) {
-            const fm = parsePlanFrontmatter(planContent);
-            planDetails.push({ file: pf, wave: fm.wave, dependsOn: fm.dependsOn });
-          } else {
-            planDetails.push({ file: pf, wave: null, dependsOn: [] });
-          }
-        }
-        phases.push({ num: parsed.num, numStr: parsed.numStr, slug: parsed.slug, status, planCount, completedPlans, files: phaseFiles, planDetails });
-      }
-      phases.sort((a, b) => a.num - b.num);
-    } else {
-      // Read from filesystem directly
-      const statePath = path.join(source.path, '.planning', 'STATE.md');
-      try {
-        const stateContent = await fs.readFile(statePath, 'utf8');
-        state = parseStateMd(stateContent);
-      } catch { /* no STATE.md */ }
-      phases = await buildPhaseList(source.path);
+      : {
+          readFile: (p) => fs.readFile(path.join(source.path, p), 'utf8').catch(() => null),
+          listDir: (p) => fs.readdir(path.join(source.path, p)).catch(() => []),
+        };
+
+    const stateContent = await reader.readFile('.planning/STATE.md');
+    if (stateContent) {
+      state = parseStateMd(stateContent);
     }
+    phases = await buildPhaseListFromReader(reader);
 
     // Parse ROADMAP.md for phase dependencies
     let dependencies = {};
-    const roadmapSrc = (branch && isValidBranchName(branch))
-      ? await readFileFromBranch(source.path, branch, '.planning/ROADMAP.md')
-      : await fs.readFile(path.join(source.path, '.planning', 'ROADMAP.md'), 'utf8').catch(() => null);
+    const roadmapSrc = await reader.readFile('.planning/ROADMAP.md');
     if (roadmapSrc) {
       dependencies = parseRoadmapDeps(roadmapSrc);
       for (const phase of phases) {
@@ -827,12 +836,7 @@ function createServer(sources) {
   });
 
   // GET /api/projects/:name/branches — list branches with .planning/STATE.md
-  fastify.get('/api/projects/:name/branches', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.get('/api/projects/:name/branches', managementCSP, async (request, reply) => {
     const sourceName = request.params.name;
     const source = activeSources.find(s => s.name === sourceName);
 
@@ -845,12 +849,7 @@ function createServer(sources) {
   });
 
   // GET /sources — serve the management page (explicit route shadows static for this path)
-  fastify.get('/sources', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.get('/sources', managementCSP, async (request, reply) => {
     const htmlPath = path.join(__dirname, '..', 'public', 'sources.html');
     const html = await fs.readFile(htmlPath, 'utf8');
     return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
@@ -982,12 +981,7 @@ function createServer(sources) {
   });
 
   // GET / — serve the browse page
-  fastify.get('/', {
-    onSend: async (request, reply, payload) => {
-      reply.header('Content-Security-Policy', MANAGEMENT_CSP);
-      return payload;
-    }
-  }, async (request, reply) => {
+  fastify.get('/', managementCSP, async (request, reply) => {
     const htmlPath = path.join(__dirname, '..', 'public', 'index.html');
     const html = await fs.readFile(htmlPath, 'utf8');
     return reply.header('Content-Type', 'text/html; charset=utf-8').send(html);
@@ -1046,4 +1040,4 @@ async function start(port, sources, options = {}) {
   return fastify;
 }
 
-module.exports = { start, createServer, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parsePlanFrontmatter };
+module.exports = { start, createServer, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };

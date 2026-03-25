@@ -887,6 +887,43 @@
       color: #484f58;
     }
 
+    /* Plan metadata card — structured replacement for plan-meta-bar */
+    .plan-meta-card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 16px;
+      font-size: 12px;
+    }
+    .plan-meta-field-label {
+      color: #8b949e;
+      font-weight: 600;
+      white-space: nowrap;
+      align-self: start;
+    }
+    .plan-meta-field-value {
+      color: #c9d1d9;
+    }
+    .req-chip {
+      display: inline-block;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 1px 8px;
+      font-size: 11px;
+      color: #8b949e;
+      margin: 2px 3px 2px 0;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .req-chip--dash {
+      color: #58a6ff;
+      border-color: rgba(88, 166, 255, 0.3);
+    }
+
     /* Browse view context bar — shows project info when navigating from dashboard */
     #browse-context-bar {
       display: flex;
@@ -2055,23 +2092,67 @@
 
         const html = await res.text();
 
-        // Build wave meta bar for PLAN.md files
-        let metaHtml = '';
+        contentEl.innerHTML = html;
+
+        // Build structured plan metadata card for PLAN.md files
         if (planDetails && planDetails.length > 0) {
           const detail = planDetails.find(d => d.file === fileName);
           if (detail && detail.wave != null) {
+            const metaCard = document.createElement('div');
+            metaCard.className = 'plan-meta-card';
+
+            function createMetaRow(labelText, valueContent) {
+              const label = document.createElement('div');
+              label.className = 'plan-meta-field-label';
+              label.textContent = labelText;
+              const value = document.createElement('div');
+              value.className = 'plan-meta-field-value';
+              if (typeof valueContent === 'string') {
+                value.textContent = valueContent;
+              } else {
+                value.appendChild(valueContent);
+              }
+              return [label, value];
+            }
+
+            // Wave row
+            const [waveLabel, waveValue] = createMetaRow('Wave', String(detail.wave));
+            metaCard.appendChild(waveLabel);
+            metaCard.appendChild(waveValue);
+
+            // Depends On row
             const depsText = detail.dependsOn && detail.dependsOn.length > 0
               ? detail.dependsOn.join(', ')
               : '(none)';
-            metaHtml = '<div class="plan-meta-bar">'
-              + '<span><span class="meta-label">Wave ' + escapeHtml(String(detail.wave)) + '</span></span>'
-              + '<span class="meta-sep">&middot;</span>'
-              + '<span>depends on: ' + escapeHtml(depsText) + '</span>'
-              + '</div>';
+            const [depsLabel, depsValue] = createMetaRow('Depends On', depsText);
+            metaCard.appendChild(depsLabel);
+            metaCard.appendChild(depsValue);
+
+            // Requirements row
+            const reqs = detail.requirements || [];
+            const reqLabel = document.createElement('div');
+            reqLabel.className = 'plan-meta-field-label';
+            reqLabel.textContent = 'Requirements';
+            const reqValue = document.createElement('div');
+            reqValue.className = 'plan-meta-field-value';
+            if (reqs.length === 0) {
+              reqValue.textContent = '(none)';
+            } else {
+              reqs.forEach(function(id) {
+                const chip = document.createElement('span');
+                chip.className = 'req-chip';
+                if (id.startsWith('DASH-')) chip.className += ' req-chip--dash';
+                chip.textContent = id;
+                reqValue.appendChild(chip);
+              });
+            }
+            metaCard.appendChild(reqLabel);
+            metaCard.appendChild(reqValue);
+
+            contentEl.insertBefore(metaCard, contentEl.firstChild);
           }
         }
 
-        contentEl.innerHTML = metaHtml + html;
         contentEl.scrollTop = 0;
       } catch (err) {
         showError(contentEl, 'phase-content-error', 'Error: ' + err.message);

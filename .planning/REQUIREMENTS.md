@@ -58,7 +58,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DASH-08**: Sub-phases (decimal phases like 4.5, 4.5.1) visually render as subordinate/branched, not as peer phases
 - [x] **DASH-09**: Project cards show pending/future phases as gray indicators alongside completed/active phases
 - [x] **DASH-10**: Sidebar distinguishes plan completion status — phases with SUMMARY.md show as complete vs in-progress/pending
-- [ ] **DASH-11**: Plan metadata (wave, dependencies, requirements) renders as structured card with labeled fields, not raw frontmatter text
+- [x] **DASH-11**: Plan metadata (wave, dependencies, requirements) renders as structured card with labeled fields, not raw frontmatter text
 - [x] **DASH-12**: Requirement tags in plan metadata render as styled chips/badges
 
 ### Distribution
@@ -140,7 +140,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-08 | Phase 4.5.1 | Complete |
 | DASH-09 | Phase 4.5.1 | Complete |
 | DASH-10 | Phase 4.5.1 | Complete |
-| DASH-11 | Phase 4.5.1 | Pending |
+| DASH-11 | Phase 4.5.1 | Complete |
 | DASH-12 | Phase 4.5.1 | Complete |
 | DIST-01 | Phase 6 | Pending |
 | DIST-02 | Phase 6 | Pending |

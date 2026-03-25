@@ -54,6 +54,12 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **DASH-04**: Clicking a phase in the timeline shows that phase's documentation (plans, summaries, research, validation) with rendered content
 - [x] **DASH-05**: Branch-aware progress — for git repos with multiple branches containing `.planning/`, show per-branch milestone progress
 - [x] **DASH-06**: Non-GSD sources (no `.planning/STATE.md`) appear on dashboard with graceful fallback to file browser
+- [ ] **DASH-07**: Phase timeline handles overflow gracefully — completed phases collapse or wrap so 12+ phase projects don't require horizontal scrolling
+- [ ] **DASH-08**: Sub-phases (decimal phases like 4.5, 4.5.1) visually render as subordinate/branched, not as peer phases
+- [ ] **DASH-09**: Project cards show pending/future phases as gray indicators alongside completed/active phases
+- [ ] **DASH-10**: Sidebar distinguishes plan completion status — phases with SUMMARY.md show as complete vs in-progress/pending
+- [ ] **DASH-11**: Plan metadata (wave, dependencies, requirements) renders as structured card with labeled fields, not raw frontmatter text
+- [ ] **DASH-12**: Requirement tags in plan metadata render as styled chips/badges
 
 ### Distribution
 
@@ -130,12 +136,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-04 | Phase 4.5 | Pending |
 | DASH-05 | Phase 4.5 | Complete |
 | DASH-06 | Phase 4.5 | Complete |
+| DASH-07 | Phase 4.5.1 | Pending |
+| DASH-08 | Phase 4.5.1 | Pending |
+| DASH-09 | Phase 4.5.1 | Pending |
+| DASH-10 | Phase 4.5.1 | Pending |
+| DASH-11 | Phase 4.5.1 | Pending |
+| DASH-12 | Phase 4.5.1 | Pending |
 | DIST-01 | Phase 6 | Pending |
 | DIST-02 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 32 total
-- Mapped to phases: 32
+- v1 requirements: 38 total
+- Mapped to phases: 38
 - Unmapped: 0
 
 ---

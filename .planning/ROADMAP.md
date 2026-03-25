@@ -104,15 +104,22 @@ Plans:
 - [x] 04.5-02-PLAN.md — Dashboard landing page SPA with project cards, multi-view routing, and browse view preservation
 - [x] 04.5-03-PLAN.md — Project detail page with phase timeline, documentation viewer, and branch awareness + visual verification
 
-### Phase 04.5.1: Dashboard UX Polish (INSERTED)
+### Phase 4.5.1: Dashboard UX Polish (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Dashboard communicates project shape, progress, and plan status at a glance without requiring click-through
 **Depends on:** Phase 4.5
+**Requirements**: DASH-07, DASH-08, DASH-09, DASH-10, DASH-11, DASH-12
+**Success Criteria** (what must be TRUE):
+  1. A 12-phase project timeline renders without horizontal overflow — completed phases collapse or wrap
+  2. Sub-phases (e.g., 4.5, 4.5.1) visually read as subordinate to their parent integer phase, not as peers
+  3. Project cards show pending/future phases as gray indicators so users can see remaining runway
+  4. The sidebar visually distinguishes phases with SUMMARY.md (complete) from those without (in-progress/pending)
+  5. Plan metadata (wave, dependencies, requirements) renders as a structured card with labeled fields, not raw frontmatter
+  6. Requirement tags in plan metadata render as styled chips/badges
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 04.5.1 to break down)
+- [ ] TBD (run /gsd:plan-phase 4.5.1 to break down)
 
 ### Phase 5: Navigation Polish
 **Goal**: Documents with internal links, heading anchors, and Mermaid diagrams navigate and render correctly

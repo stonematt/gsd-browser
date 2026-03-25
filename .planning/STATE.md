@@ -108,6 +108,10 @@ Recent decisions affecting current work:
 - [Phase 04.5-gsd-dashboard]: Renamed #sidebar to #browse-sidebar and #content to #browse-content — properly scopes browse view elements in multi-view SPA
 - [Phase 04.5-gsd-dashboard]: Dashboard SPA: Hash routing with view prefixes (#/browse/, #/project/) — enables multi-view SPA without build tooling
 
+### Roadmap Evolution
+
+- Phase 04.5.1 inserted after Phase 4.5: Dashboard UX Polish (INSERTED) — timeline overflow, sub-phase hierarchy, pending visibility, plan status, metadata formatting, requirement badges
+
 ### Pending Todos
 
 None yet.

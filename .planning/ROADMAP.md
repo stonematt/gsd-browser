@@ -16,7 +16,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Rendering** - GFM markdown rendering with syntax highlighting, fresh-from-disk on every request (completed 2026-03-13)
 - [x] **Phase 3: Source Registration** - CLI source management with persistence and convention-based discovery (completed 2026-03-20)
 - [x] **Phase 4: Browser UI** - Vanilla JS frontend shell with file tree, repo switcher, and dark theme (completed 2026-03-22)
-- [ ] **Phase 4.5: GSD Dashboard** - Multi-project progress dashboard with phase timeline, editorial context, and branch awareness (INSERTED)
+- [x] **Phase 4.5: GSD Dashboard** - Multi-project progress dashboard with phase timeline, editorial context, and branch awareness (INSERTED) (completed 2026-03-24)
+- [ ] **Phase 4.5.1: Dashboard UX Polish** - Timeline overflow strategy, sub-phase visual hierarchy, pending phase visibility on cards, plan status surfacing in sidebar, structured plan metadata display, and requirement tag badges (INSERTED)
 - [ ] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams
 - [ ] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX
 
@@ -96,12 +97,22 @@ Plans:
   4. Clicking a phase in the timeline shows that phase's documentation (plans, summaries, research, validation) in a sidebar with rendered content pane
   5. For sources that are git repos with multiple branches containing `.planning/`, the dashboard shows per-branch milestone progress (read via `git show <branch>:.planning/STATE.md`)
   6. Non-GSD sources (no `.planning/STATE.md`) still appear on the dashboard but fall back to the file browser view
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 04.5-01-PLAN.md — Server-side API endpoints + parsing utilities (dashboard data, phase detection, git branch operations)
-- [ ] 04.5-02-PLAN.md — Dashboard landing page SPA with project cards, multi-view routing, and browse view preservation
-- [ ] 04.5-03-PLAN.md — Project detail page with phase timeline, documentation viewer, and branch awareness + visual verification
+- [x] 04.5-01-PLAN.md — Server-side API endpoints + parsing utilities (dashboard data, phase detection, git branch operations)
+- [x] 04.5-02-PLAN.md — Dashboard landing page SPA with project cards, multi-view routing, and browse view preservation
+- [x] 04.5-03-PLAN.md — Project detail page with phase timeline, documentation viewer, and branch awareness + visual verification
+
+### Phase 04.5.1: Dashboard UX Polish (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 4.5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 04.5.1 to break down)
 
 ### Phase 5: Navigation Polish
 **Goal**: Documents with internal links, heading anchors, and Mermaid diagrams navigate and render correctly
@@ -126,7 +137,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -134,6 +145,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 5 -> 6
 | 2. Rendering | 2/2 | Complete   | 2026-03-13 |
 | 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
 | 4. Browser UI | 2/2 | Complete   | 2026-03-22 |
-| 4.5. GSD Dashboard | 2/3 | In Progress|  |
+| 4.5. GSD Dashboard | 3/3 | Complete   | 2026-03-24 |
+| 4.5.1. Dashboard UX Polish | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

@@ -104,13 +104,13 @@ function parseRoadmapDeps(content) {
 }
 
 /**
- * Parse PLAN.md YAML frontmatter for wave and depends_on fields.
+ * Parse PLAN.md YAML frontmatter for wave, depends_on, and requirements fields.
  *
  * @param {string} content - PLAN.md file content
- * @returns {{ wave: number|null, dependsOn: string[] }}
+ * @returns {{ wave: number|null, dependsOn: string[], requirements: string[] }}
  */
 function parsePlanFrontmatter(content) {
-  const result = { wave: null, dependsOn: [] };
+  const result = { wave: null, dependsOn: [], requirements: [] };
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return result;
 
@@ -123,6 +123,27 @@ function parsePlanFrontmatter(content) {
     const raw = depsMatch[1].trim();
     if (raw) {
       result.dependsOn = raw.split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    }
+  }
+
+  // Support inline array format: requirements: [DASH-01, DASH-02]
+  const reqInlineMatch = yaml.match(/^requirements:\s*\[([^\]]*)\]/m);
+  if (reqInlineMatch) {
+    const raw = reqInlineMatch[1].trim();
+    if (raw) {
+      result.requirements = raw.split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    }
+  } else {
+    // Support multi-line YAML list format:
+    // requirements:
+    //   - DASH-01
+    //   - DASH-02
+    const reqMultiMatch = yaml.match(/^requirements:\s*\n((?:[ \t]+-[ \t]+\S[^\n]*\n?)+)/m);
+    if (reqMultiMatch) {
+      result.requirements = reqMultiMatch[1]
+        .split('\n')
+        .map(line => line.replace(/^[ \t]+-[ \t]+/, '').trim())
+        .filter(Boolean);
     }
   }
 
@@ -194,9 +215,9 @@ async function buildPlanDetails(readFileFn, planFiles) {
     const content = await readFileFn(planFile);
     if (content) {
       const fm = parsePlanFrontmatter(content);
-      return { file: planFile, wave: fm.wave, dependsOn: fm.dependsOn };
+      return { file: planFile, wave: fm.wave, dependsOn: fm.dependsOn, requirements: fm.requirements };
     }
-    return { file: planFile, wave: null, dependsOn: [] };
+    return { file: planFile, wave: null, dependsOn: [], requirements: [] };
   }));
 }
 

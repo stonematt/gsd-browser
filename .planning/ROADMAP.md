@@ -17,7 +17,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Source Registration** - CLI source management with persistence and convention-based discovery (completed 2026-03-20)
 - [x] **Phase 4: Browser UI** - Vanilla JS frontend shell with file tree, repo switcher, and dark theme (completed 2026-03-22)
 - [x] **Phase 4.5: GSD Dashboard** - Multi-project progress dashboard with phase timeline, editorial context, and branch awareness (INSERTED) (completed 2026-03-24)
-- [ ] **Phase 4.5.1: Dashboard UX Polish** - Timeline overflow strategy, sub-phase visual hierarchy, pending phase visibility on cards, plan status surfacing in sidebar, structured plan metadata display, and requirement tag badges (INSERTED)
+- [x] **Phase 4.5.1: Dashboard UX Polish** - Timeline overflow strategy, sub-phase visual hierarchy, pending phase visibility on cards, plan status surfacing in sidebar, structured plan metadata display, and requirement tag badges (INSERTED) (completed 2026-03-25)
+- [ ] **Phase 4.5.2: Theme Token System** - Extract hardcoded colors into CSS custom properties, add light theme via prefers-color-scheme media query (INSERTED)
+- [ ] **Phase 4.5.3: Dashboard Tile Redesign** - Compressed history / expanded frontier dot strip, branching stems for sub-phases, dot sizing by plan count, depth-aware sub-phase parsing (INSERTED)
+- [ ] **Phase 4.5.4: Detail Page Layout** - Three-column layout with vertical phase navigator, collapsible completed section, col 1 collapse with localStorage persistence, frontmatter stripping from rendered output (INSERTED)
 - [ ] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams
 - [ ] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX
 
@@ -116,12 +119,50 @@ Plans:
   4. The sidebar visually distinguishes phases with SUMMARY.md (complete) from those without (in-progress/pending)
   5. Plan metadata (wave, dependencies, requirements) renders as a structured card with labeled fields, not raw frontmatter
   6. Requirement tags in plan metadata render as styled chips/badges
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 04.5.1-01-PLAN.md — Server-side requirements parsing in parsePlanFrontmatter + propagation through buildPlanDetails
-- [ ] 04.5.1-02-PLAN.md — Timeline overflow, sub-phase hierarchy, pending phase indicators, sidebar file classification
-- [ ] 04.5.1-03-PLAN.md — Structured plan metadata card with requirement chips/badges
+- [x] 04.5.1-01-PLAN.md — Server-side requirements parsing in parsePlanFrontmatter + propagation through buildPlanDetails
+- [x] 04.5.1-02-PLAN.md — Timeline overflow, sub-phase hierarchy, pending phase indicators, sidebar file classification
+- [x] 04.5.1-03-PLAN.md — Structured plan metadata card with requirement chips/badges
+
+### Phase 4.5.2: Theme Token System (INSERTED)
+
+**Goal:** All UI colors defined as CSS custom properties with dark-as-default and light theme support, enabling theme-aware development for all subsequent phases
+**Depends on:** Phase 4.5.1
+**Requirements**: DSGN-03, DSGN-04
+**Success Criteria** (what must be TRUE):
+  1. Every hardcoded hex color in index.html and markdown.css is replaced by a CSS custom property (--bg-page, --text-primary, etc.)
+  2. Dark mode renders identically to current appearance (no visual regression)
+  3. Setting `prefers-color-scheme: light` in the browser produces a readable, properly-contrasted light theme
+  4. Status colors (--status-complete, --status-active, --status-pending) are consistent across both themes
+**Plans**: TBD
+
+### Phase 4.5.3: Dashboard Tile Redesign (INSERTED)
+
+**Goal:** Project cards communicate project shape at a glance — compressed completed history, expanded active/future frontier, and branching depth for sub-phases
+**Depends on:** Phase 4.5.2
+**Requirements**: DASH-13, DASH-14, DASH-15
+**Success Criteria** (what must be TRUE):
+  1. Completed phases render as small numbered dots; active and future phases show full slug names
+  2. Sub-phases (4.5, 4.5.1) branch below their parent on vertical stems, not as linear peers on the main axis
+  3. Nested sub-phases (4.5.1) drop to a third row below their parent sub-phase
+  4. Dot sizes scale by plan count (0 plans=12px, 1-2=14px, 3-4=16px, 5+=20px); sub-phase dots are 4px smaller
+  5. Phase number parsing correctly distinguishes depth levels (4 vs 4.5 vs 4.5.1) without parseFloat truncation
+**Plans**: TBD
+
+### Phase 4.5.4: Detail Page Layout (INSERTED)
+
+**Goal:** The project detail page uses a three-column layout with a vertical phase navigator that scales to any number of phases and collapses completed history by default
+**Depends on:** Phase 4.5.2
+**Requirements**: DASH-16, DASH-17, DASH-18, DASH-19
+**Success Criteria** (what must be TRUE):
+  1. Detail page renders as a 3-column grid: phase navigator (200px, collapsible) | file list (180px) | document content (flex)
+  2. Completed phases collapse into a single "N phases complete" row with a mini dot strip; clicking expands the full list
+  3. The col 1 collapse toggle hides/shows the phase navigator with a CSS transition; collapse state persists in localStorage across page loads
+  4. PLAN.md files render with a structured metadata card (wave, deps, requirements) and the raw YAML frontmatter is stripped from the rendered markdown body
+  5. Sub-phases are indented by depth level in the vertical navigator (22px per level)
+**Plans**: TBD
 
 ### Phase 5: Navigation Polish
 **Goal**: Documents with internal links, heading anchors, and Mermaid diagrams navigate and render correctly
@@ -146,7 +187,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.5.3 -> 4.5.4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -155,6 +196,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 5 -> 6
 | 3. Source Registration | 3/3 | Complete   | 2026-03-20 |
 | 4. Browser UI | 2/2 | Complete   | 2026-03-22 |
 | 4.5. GSD Dashboard | 3/3 | Complete   | 2026-03-24 |
-| 4.5.1. Dashboard UX Polish | 2/3 | In Progress|  |
+| 4.5.1. Dashboard UX Polish | 3/3 | Complete   | 2026-03-25 |
+| 4.5.2. Theme Token System | 0/TBD | Not started | - |
+| 4.5.3. Dashboard Tile Redesign | 0/TBD | Not started | - |
+| 4.5.4. Detail Page Layout | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

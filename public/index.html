@@ -245,35 +245,92 @@
       margin-top: 2px;
     }
 
-    /* History strip — compressed completed phase rectangles with branching topology */
+    /* Phase strip — recursive tree minimap */
     .card-history-strip {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 3px;
-      padding: 8px 0;
+      padding: 6px 0;
       align-items: flex-start;
+      position: relative;
     }
-
-    .history-parent-group {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    /* Timeline arrow: horizontal line with arrowhead at right end */
+    .card-history-strip::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 6px;
+      top: 4px;
+      height: 0;
+      border-top: 1px solid var(--border-default);
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Arrowhead */
+    .card-history-strip::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0px;
+      width: 0;
+      height: 0;
+      border-top: 4.5px solid transparent;
+      border-bottom: 4.5px solid transparent;
+      border-left: 7px solid var(--border-default);
+      opacity: 0.8;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card-history-strip > .history-node {
+      z-index: 1;
+      margin-top: 5px;
     }
 
     .history-rect {
-      border-radius: 3px;
+      border-radius: 2px;
       cursor: default;
       transition: opacity 0.15s;
+      flex-shrink: 1;
     }
-    .history-rect:hover { opacity: 0.8; }
+    .history-rect:hover { opacity: 0.75; }
     .history-rect--complete { background: var(--status-complete); }
-    .history-rect--active { background: var(--status-active); box-shadow: 0 0 6px var(--active-glow); }
+    .history-rect--active { background: var(--status-active); }
+    .history-rect--active[data-area="large"] { box-shadow: 0 0 4px var(--active-glow); }
+    .history-rect--active[data-area="small"] { border: 1.5px solid var(--status-active); box-shadow: none; }
     .history-rect--pending { background: var(--status-pending); }
 
-    .history-subphase-tier {
+    /* Tree node: column, left-aligned */
+    .history-node {
       display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      flex-shrink: 1;
+      min-width: 0;
+    }
+
+    /* Children tier: own row, left-justified, indented from parent.
+       Siblings flow horizontally. L-elbow connects up to parent. */
+    .history-tier {
+      display: flex;
+      flex-wrap: nowrap;
       gap: 2px;
-      padding-left: 4px;
+      align-items: flex-start;
+      position: relative;
+      margin-top: 2px;
+      padding-left: 10px;
+    }
+    /* L-elbow from first child up to parent */
+    .history-tier::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: -2px;
+      bottom: 50%;
+      width: 8px;
+      border-left: 1.5px solid var(--border-default);
+      border-bottom: 1.5px solid var(--border-default);
+      border-bottom-left-radius: 3px;
     }
 
     /* Frontier list — active/future phases with full names and goals */
@@ -282,7 +339,7 @@
       flex-direction: column;
       gap: 4px;
       padding: 6px 0;
-      max-height: 120px;
+      max-height: 200px;
       overflow-y: auto;
     }
 
@@ -1346,65 +1403,58 @@
 
         const { history, frontier } = splitHistoryFrontier(allPhases);
 
-        // History strip: proportional colored rectangles with branching sub-phases
-        if (history.length > 0) {
+        // Phase strip: proportional colored rectangles for ALL phases (complete + active + pending)
+        function rectStatusClass(status) {
+          if (status === 'in-progress') return 'active';
+          if (status === 'complete') return 'complete';
+          return 'pending';
+        }
+
+        if (allPhases.length > 0) {
           const strip = document.createElement('div');
           strip.className = 'card-history-strip';
 
-          const historyTree = buildPhaseTree(history);
+          const allTree = buildPhaseTree(allPhases);
+          const rectScaler = createRectScaler(allPhases);
 
-          for (const root of historyTree) {
-            const group = document.createElement('div');
-            group.className = 'history-parent-group';
+          // Recursive tree node: rect + optional children tier
+          // depthScale shrinks 80% per level for visual hierarchy
+          function renderTreeNode(phase, depth) {
+            const depthScale = Math.pow(0.8, depth);
+            const node = document.createElement('div');
+            const hasChildren = phase.children && phase.children.length > 0;
+            node.className = 'history-node' + (hasChildren ? ' history-node--parent' : '');
 
-            const rootDims = rectDimensions(root.planCount, root.requirementCount, 1.0);
-            const rootRect = document.createElement('div');
-            rootRect.className = 'history-rect history-rect--' + root.status;
-            rootRect.style.width = rootDims.width + 'px';
-            rootRect.style.height = rootDims.height + 'px';
-            const rootDisp = root.displayNum || root.numStr;
-            const rootName = phaseNames[rootDisp] || root.slug || rootDisp;
-            rootRect.title = 'Phase ' + rootDisp + ': ' + rootName + '\n' + (root.planCount || 0) + ' plans, ' + (root.requirementCount || 0) + ' requirements';
-            group.appendChild(rootRect);
+            const dims = rectScaler(phase.planCount, phase.requirementCount, depthScale);
+            const rect = document.createElement('div');
+            const statusCls = rectStatusClass(phase.status);
+            rect.className = 'history-rect history-rect--' + statusCls;
+            rect.style.width = dims.width + 'px';
+            rect.style.height = dims.height + 'px';
+            // Active glow scaling: large rects get glow, small get border
+            if (statusCls === 'active') {
+              rect.dataset.area = (dims.width * dims.height > 200) ? 'large' : 'small';
+            }
+            const disp = phase.displayNum || phase.numStr;
+            const name = phaseNames[disp] || phase.slug || disp;
+            rect.title = 'Phase ' + disp + ': ' + name + '\n' + (phase.planCount || 0) + ' plans, ' + (phase.requirementCount || 0) + ' requirements';
+            node.appendChild(rect);
 
-            if (root.children && root.children.length > 0) {
-              const tier1 = document.createElement('div');
-              tier1.className = 'history-subphase-tier';
-
-              for (const child of root.children) {
-                const childDims = rectDimensions(child.planCount, child.requirementCount, 0.75);
-                const childRect = document.createElement('div');
-                childRect.className = 'history-rect history-rect--' + child.status;
-                childRect.style.width = childDims.width + 'px';
-                childRect.style.height = childDims.height + 'px';
-                const childDisp = child.displayNum || child.numStr;
-                const childName = phaseNames[childDisp] || child.slug || childDisp;
-                childRect.title = 'Phase ' + childDisp + ': ' + childName + '\n' + (child.planCount || 0) + ' plans, ' + (child.requirementCount || 0) + ' requirements';
-                tier1.appendChild(childRect);
-
-                // Depth-2 grandchildren in a nested tier
-                if (child.children && child.children.length > 0) {
-                  const tier2 = document.createElement('div');
-                  tier2.className = 'history-subphase-tier';
-                  for (const grandchild of child.children) {
-                    const gcDims = rectDimensions(grandchild.planCount, grandchild.requirementCount, 0.75);
-                    const gcRect = document.createElement('div');
-                    gcRect.className = 'history-rect history-rect--' + grandchild.status;
-                    gcRect.style.width = gcDims.width + 'px';
-                    gcRect.style.height = gcDims.height + 'px';
-                    const gcDisp = grandchild.displayNum || grandchild.numStr;
-                    const gcName = phaseNames[gcDisp] || grandchild.slug || gcDisp;
-                    gcRect.title = 'Phase ' + gcDisp + ': ' + gcName + '\n' + (grandchild.planCount || 0) + ' plans, ' + (grandchild.requirementCount || 0) + ' requirements';
-                    tier2.appendChild(gcRect);
-                  }
-                  group.appendChild(tier2);
-                }
+            // Children tier with org-chart connectors
+            if (hasChildren) {
+              const tier = document.createElement('div');
+              tier.className = 'history-tier';
+              for (const child of phase.children) {
+                tier.appendChild(renderTreeNode(child, depth + 1));
               }
-
-              group.appendChild(tier1);
+              node.appendChild(tier);
             }
 
-            strip.appendChild(group);
+            return node;
+          }
+
+          for (const root of allTree) {
+            strip.appendChild(renderTreeNode(root, 0));
           }
 
           card.appendChild(strip);
@@ -2030,12 +2080,28 @@
       return { history: phases.slice(0, boundaryIdx), frontier: phases.slice(boundaryIdx) };
     }
 
-    function rectDimensions(planCount, reqCount, scale) {
-      const minW = 12, minH = 12;
-      const pxPerPlan = 8, pxPerReq = 6;
-      const w = Math.max(minW, (planCount || 0) * pxPerPlan) * scale;
-      const h = Math.max(minH, (reqCount || 0) * pxPerReq) * scale;
-      return { width: Math.round(w), height: Math.round(h) };
+    // Project-relative scaling: computes dimensions relative to the project's
+    // own data range so area contrast is dramatic (3:1+ ratio target).
+    // Call createScaler(allPhases) once per card, then scaler(phase, depthScale).
+    function createRectScaler(phases) {
+      const plans = phases.map(p => p.planCount || 0);
+      const reqs = phases.map(p => p.requirementCount || 0);
+      const maxPlans = Math.max(1, ...plans);
+      const maxReqs = Math.max(1, ...reqs);
+
+      const MIN = 8;     // minimum dimension px
+      const MAX_W = 28;  // maximum width px (prevent one phase squashing others)
+      const MAX_H = 22;  // maximum height px
+
+      return function scaler(planCount, reqCount, depthScale) {
+        // Normalize to 0..1 range within this project, then apply sqrt
+        // to stretch low values (ensures 3:1+ area ratio)
+        const normP = Math.sqrt((planCount || 0) / maxPlans);
+        const normR = Math.sqrt((reqCount || 0) / maxReqs);
+        const w = Math.max(MIN, Math.round(MIN + normP * (MAX_W - MIN))) * depthScale;
+        const h = Math.max(MIN, Math.round(MIN + normR * (MAX_H - MIN))) * depthScale;
+        return { width: Math.round(w), height: Math.round(h) };
+      };
     }
 
     function groupPhases(phases) {

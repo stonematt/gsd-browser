@@ -1326,3 +1326,162 @@ describe('comparePhaseNums', () => {
     assert.deepEqual(order, ['4', '4.5', '4.5.1', '4.5.2', '5']);
   });
 });
+
+// ============================================================
+// Phase 4.5.3 Plan 01 - Task 2: requirementCount and phaseGoals (TDD)
+// ============================================================
+
+describe('parseRoadmapPhaseGoals', () => {
+  test('parseRoadmapPhaseGoals extracts goal text for a depth-0 phase', () => {
+    const content = [
+      '### Phase 4: Browser UI',
+      '**Goal**: Users can navigate the file tree.',
+      'Other text',
+    ].join('\n');
+    const goals = parseRoadmapPhaseGoals(content);
+    assert.equal(goals['4'], 'Users can navigate the file tree.');
+  });
+
+  test('parseRoadmapPhaseGoals extracts goal for a depth-1 phase', () => {
+    const content = [
+      '### Phase 4.5: GSD Dashboard',
+      '**Goal**: Visualize project progress at a glance.',
+    ].join('\n');
+    const goals = parseRoadmapPhaseGoals(content);
+    assert.equal(goals['4.5'], 'Visualize project progress at a glance.');
+  });
+
+  test('parseRoadmapPhaseGoals extracts goal for a depth-2 phase', () => {
+    const content = [
+      '### Phase 4.5.1: Dashboard UX Polish',
+      '**Goal**: Polish timeline and card layout.',
+    ].join('\n');
+    const goals = parseRoadmapPhaseGoals(content);
+    assert.equal(goals['4.5.1'], 'Polish timeline and card layout.');
+  });
+
+  test('parseRoadmapPhaseGoals handles multiple phases', () => {
+    const content = [
+      '### Phase 4: Browser UI',
+      '**Goal**: First goal.',
+      '',
+      '### Phase 4.5: GSD Dashboard',
+      '**Goal**: Second goal.',
+    ].join('\n');
+    const goals = parseRoadmapPhaseGoals(content);
+    assert.equal(goals['4'], 'First goal.');
+    assert.equal(goals['4.5'], 'Second goal.');
+  });
+
+  test('parseRoadmapPhaseGoals returns empty object for content with no phases', () => {
+    const goals = parseRoadmapPhaseGoals('# Just a heading\n\nSome text.');
+    assert.deepEqual(goals, {});
+  });
+
+  test('parseRoadmapPhaseGoals returns empty goal for phase with no Goal line', () => {
+    const content = '### Phase 4: Browser UI\n\nSome other text.\n\n### Phase 5: Next';
+    const goals = parseRoadmapPhaseGoals(content);
+    assert.ok(!('4' in goals), 'Phase 4 should not have an entry if no Goal line found');
+  });
+});
+
+describe('requirementCount in buildPhaseListFromReader', () => {
+  test('buildPhaseListFromReader phase object has requirementCount field', async () => {
+    const { buildPhaseListFromReader } = require('../src/server.js');
+    const reader = {
+      listDir: async (p) => {
+        if (p === '.planning/phases') return ['01-test'];
+        if (p === '.planning/phases/01-test') return ['01-01-PLAN.md', '01-01-SUMMARY.md'];
+        return [];
+      },
+      readFile: async (_f) => `---\nwave: 1\ndepends_on: []\nrequirements: [DASH-01, DASH-02]\n---\n# Plan\n`,
+    };
+    const phases = await buildPhaseListFromReader(reader);
+    assert.equal(phases.length, 1);
+    assert.ok('requirementCount' in phases[0], 'phase should have requirementCount field');
+    assert.equal(phases[0].requirementCount, 2);
+  });
+
+  test('buildPhaseListFromReader deduplicates requirementCount across plans', async () => {
+    const { buildPhaseListFromReader } = require('../src/server.js');
+    const reader = {
+      listDir: async (p) => {
+        if (p === '.planning/phases') return ['01-test'];
+        if (p === '.planning/phases/01-test') return ['01-01-PLAN.md', '01-02-PLAN.md'];
+        return [];
+      },
+      readFile: async (_f) => `---\nwave: 1\ndepends_on: []\nrequirements: [DASH-01, DASH-02]\n---\n# Plan\n`,
+    };
+    const phases = await buildPhaseListFromReader(reader);
+    assert.equal(phases[0].requirementCount, 2, 'deduped: DASH-01 and DASH-02 across two plans');
+  });
+
+  test('buildPhaseListFromReader requirementCount is 0 for phase with no plans', async () => {
+    const { buildPhaseListFromReader } = require('../src/server.js');
+    const reader = {
+      listDir: async (p) => {
+        if (p === '.planning/phases') return ['01-empty'];
+        if (p === '.planning/phases/01-empty') return [];
+        return [];
+      },
+      readFile: async (_f) => null,
+    };
+    const phases = await buildPhaseListFromReader(reader);
+    // empty phase dir returns no phases (getPhaseInfo-like filtering)
+    assert.equal(phases.length, 0, 'empty phase dir should produce no phase');
+  });
+});
+
+describe('/api/dashboard phaseGoals and requirementCount', () => {
+  test('/api/dashboard phaseStatus entries include requirementCount field', async () => {
+    await withTempConfig(async () => {
+      const fastify = createServer(makeGsdSources(gsdSourceDir));
+      const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+      const body = JSON.parse(response.body);
+      const project = body.projects[0];
+      assert.ok(Array.isArray(project.phaseStatus), 'phaseStatus should be an array');
+      for (const phase of project.phaseStatus) {
+        assert.ok('requirementCount' in phase, `phase ${phase.numStr} should have requirementCount`);
+        assert.ok(typeof phase.requirementCount === 'number', 'requirementCount should be a number');
+      }
+      await fastify.close();
+    });
+  });
+
+  test('/api/dashboard response includes phaseGoals map', async () => {
+    await withTempConfig(async () => {
+      const fastify = createServer(makeGsdSources(gsdSourceDir));
+      const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+      const body = JSON.parse(response.body);
+      const project = body.projects[0];
+      assert.ok('phaseGoals' in project, 'project should have phaseGoals field');
+      assert.ok(typeof project.phaseGoals === 'object', 'phaseGoals should be an object');
+      await fastify.close();
+    });
+  });
+
+  test('/api/dashboard response includes phaseNames map', async () => {
+    await withTempConfig(async () => {
+      const fastify = createServer(makeGsdSources(gsdSourceDir));
+      const response = await fastify.inject({ method: 'GET', url: '/api/dashboard' });
+      const body = JSON.parse(response.body);
+      const project = body.projects[0];
+      assert.ok('phaseNames' in project, 'project should have phaseNames field');
+      assert.ok(typeof project.phaseNames === 'object', 'phaseNames should be an object');
+      await fastify.close();
+    });
+  });
+});
+
+describe('/api/projects/:name/detail phaseGoals', () => {
+  test('/api/projects/:name/detail response includes phaseGoals map', async () => {
+    await withTempConfig(async () => {
+      const fastify = createServer(makeGsdSources(gsdSourceDir));
+      const response = await fastify.inject({ method: 'GET', url: '/api/projects/my-project/detail' });
+      const body = JSON.parse(response.body);
+      assert.ok('phaseGoals' in body, 'detail response should have phaseGoals field');
+      assert.ok(typeof body.phaseGoals === 'object', 'phaseGoals should be an object');
+      await fastify.close();
+    });
+  });
+});

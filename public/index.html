@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>gsd-browser</title>
+  <link rel="stylesheet" href="/styles/theme.css">
   <link rel="stylesheet" href="/styles/markdown.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      background: #0d1117;
-      color: #c9d1d9;
+      background: var(--bg-page);
+      color: var(--text-primary);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       font-size: 14px;
       line-height: 1.5;
@@ -25,8 +26,8 @@
     /* ------------------------------------------------------------------ */
 
     #app-header {
-      background: #161b22;
-      border-bottom: 1px solid #21262d;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-default);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -38,14 +39,14 @@
 
     #app-title {
       font-weight: 600;
-      color: #f0f6fc;
+      color: var(--text-bright);
       text-decoration: none;
       font-size: 14px;
       flex-shrink: 0;
     }
 
     #app-title:hover {
-      color: #58a6ff;
+      color: var(--text-link);
     }
 
     #header-nav {
@@ -55,7 +56,7 @@
     }
 
     .nav-link {
-      color: #8b949e;
+      color: var(--text-muted);
       text-decoration: none;
       font-size: 13px;
       padding: 4px 10px;
@@ -65,18 +66,18 @@
     }
 
     .nav-link:hover {
-      color: #c9d1d9;
-      background: #21262d;
+      color: var(--text-primary);
+      background: var(--border-default);
     }
 
     .nav-link.active {
-      color: #f0f6fc;
-      border-color: #21262d;
-      background: #0d1117;
+      color: var(--text-bright);
+      border-color: var(--border-default);
+      background: var(--bg-page);
     }
 
     #header-sep {
-      color: #21262d;
+      color: var(--border-default);
       font-size: 16px;
       flex-shrink: 0;
     }
@@ -84,8 +85,8 @@
     /* Sidebar toggle — only shown in browse view */
     #sidebar-toggle {
       background: none;
-      border: 1px solid #21262d;
-      color: #8b949e;
+      border: 1px solid var(--border-default);
+      color: var(--text-muted);
       cursor: pointer;
       border-radius: 4px;
       padding: 4px 8px;
@@ -96,8 +97,8 @@
     }
 
     #sidebar-toggle:hover {
-      background: #21262d;
-      color: #c9d1d9;
+      background: var(--border-default);
+      color: var(--text-primary);
     }
 
     #sidebar-toggle.visible {
@@ -109,7 +110,7 @@
       flex: 1;
       font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
       font-size: 12px;
-      color: #8b949e;
+      color: var(--text-muted);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -122,11 +123,11 @@
 
     #breadcrumb .bc-sep {
       margin: 0 4px;
-      color: #484f58;
+      color: var(--text-dimmed);
     }
 
     #breadcrumb .bc-file {
-      color: #f0f6fc;
+      color: var(--text-bright);
     }
 
     /* Header spacer — used when breadcrumb is not shown */
@@ -174,7 +175,7 @@
     .dash-section-title {
       font-size: 13px;
       font-weight: 600;
-      color: #8b949e;
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom: 12px;
@@ -187,8 +188,8 @@
     }
 
     .project-card {
-      background: #161b22;
-      border: 1px solid #21262d;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
       border-radius: 8px;
       padding: 16px;
       cursor: pointer;
@@ -196,7 +197,7 @@
     }
 
     .project-card:hover {
-      border-color: #58a6ff;
+      border-color: var(--text-link);
     }
 
     .project-card-header {
@@ -209,13 +210,13 @@
     .project-card-name {
       font-size: 15px;
       font-weight: 600;
-      color: #f0f6fc;
+      color: var(--text-bright);
     }
 
     .project-card-milestone {
       font-size: 11px;
-      color: #8b949e;
-      background: #21262d;
+      color: var(--text-muted);
+      background: var(--border-default);
       border-radius: 4px;
       padding: 1px 8px;
       flex-shrink: 0;
@@ -229,18 +230,18 @@
     .card-phase-title {
       font-size: 13px;
       font-weight: 600;
-      color: #58a6ff;
+      color: var(--status-active);
       margin-bottom: 2px;
     }
 
     .card-phase-progress {
       font-size: 12px;
-      color: #8b949e;
+      color: var(--text-muted);
     }
 
     .card-phase-activity {
       font-size: 11px;
-      color: #484f58;
+      color: var(--text-dimmed);
       margin-top: 2px;
     }
 
@@ -269,40 +270,40 @@
       flex-shrink: 0;
     }
 
-    .mini-dot--complete { background: #3fb950; }
+    .mini-dot--complete { background: var(--status-complete); }
     .mini-dot--active {
-      background: #58a6ff;
+      background: var(--status-active);
       width: 14px;
       height: 14px;
-      box-shadow: 0 0 6px rgba(88, 166, 255, 0.5);
+      box-shadow: 0 0 6px var(--active-glow);
     }
-    .mini-dot--pending { background: #484f58; }
+    .mini-dot--pending { background: var(--text-dimmed); }
 
     .mini-num {
       font-size: 9px;
-      color: #484f58;
+      color: var(--text-dimmed);
       line-height: 1;
     }
 
     .mini-phase--active .mini-num {
-      color: #58a6ff;
+      color: var(--status-active);
       font-weight: 600;
     }
 
     .mini-connector {
       width: 8px;
       height: 2px;
-      background: #21262d;
+      background: var(--border-default);
       flex-shrink: 0;
       align-self: flex-start;
       margin-top: 4px;
     }
 
     .mini-connector--dep {
-      background: #484f58;
+      background: var(--text-dimmed);
       height: 2px;
       background-image: repeating-linear-gradient(
-        90deg, #484f58 0px, #484f58 3px, transparent 3px, transparent 6px
+        90deg, var(--text-dimmed) 0px, var(--text-dimmed) 3px, transparent 3px, transparent 6px
       );
       background-color: transparent;
     }
@@ -311,14 +312,14 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
-      border-top: 1px solid #21262d;
+      border-top: 1px solid var(--border-default);
       padding-top: 10px;
       margin-top: 4px;
     }
 
     .quick-link {
       font-size: 11px;
-      color: #58a6ff;
+      color: var(--text-link);
       text-decoration: none;
     }
 
@@ -340,7 +341,7 @@
     }
 
     .other-source-link {
-      color: #58a6ff;
+      color: var(--text-link);
       text-decoration: none;
       font-size: 13px;
     }
@@ -351,25 +352,25 @@
 
     .other-source-badge {
       font-size: 10px;
-      color: #8b949e;
-      background: #21262d;
+      color: var(--text-muted);
+      background: var(--border-default);
       border-radius: 4px;
       padding: 1px 6px;
     }
 
     .dash-empty {
-      color: #484f58;
+      color: var(--text-dimmed);
       font-style: italic;
       padding: 24px 0;
     }
 
     .dash-error {
-      color: #f85149;
+      color: var(--status-danger);
       padding: 24px;
     }
 
     .dash-loading {
-      color: #8b949e;
+      color: var(--text-muted);
       font-style: italic;
       padding: 24px;
     }
@@ -406,8 +407,8 @@
 
     #browse-sidebar {
       grid-area: sidebar;
-      background: #161b22;
-      border-right: 1px solid #21262d;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-default);
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -415,15 +416,15 @@
 
     #source-switcher {
       padding: 10px 12px;
-      border-bottom: 1px solid #21262d;
+      border-bottom: 1px solid var(--border-default);
       flex-shrink: 0;
     }
 
     #source-select {
       width: 100%;
-      background: #0d1117;
-      border: 1px solid #21262d;
-      color: #c9d1d9;
+      background: var(--bg-page);
+      border: 1px solid var(--border-default);
+      color: var(--text-primary);
       padding: 5px 8px;
       border-radius: 4px;
       font-size: 13px;
@@ -433,7 +434,7 @@
 
     #source-select:focus {
       outline: none;
-      border-color: #58a6ff;
+      border-color: var(--text-link);
     }
 
     #tree {
@@ -443,7 +444,7 @@
     }
 
     .tree-empty {
-      color: #484f58;
+      color: var(--text-dimmed);
       font-style: italic;
       padding: 16px 12px;
       font-size: 13px;
@@ -460,7 +461,7 @@
       width: 100%;
       background: none;
       border: none;
-      color: #8b949e;
+      color: var(--text-muted);
       cursor: pointer;
       padding: 3px 0;
       font-size: 13px;
@@ -469,16 +470,16 @@
     }
 
     .tree-dir:hover {
-      color: #c9d1d9;
+      color: var(--text-primary);
     }
 
     .tree-dir--convention {
-      color: #c9d1d9;
+      color: var(--text-primary);
       font-weight: 600;
     }
 
     .tree-dir--convention:hover {
-      color: #f0f6fc;
+      color: var(--text-bright);
     }
 
     .tree-dir-arrow {
@@ -486,7 +487,7 @@
       width: 14px;
       font-size: 10px;
       transition: transform 0.1s;
-      color: #484f58;
+      color: var(--text-dimmed);
       flex-shrink: 0;
     }
 
@@ -500,7 +501,7 @@
 
     .tree-file {
       display: block;
-      color: #58a6ff;
+      color: var(--text-link);
       text-decoration: none;
       padding: 3px 0;
       font-size: 13px;
@@ -514,9 +515,9 @@
     }
 
     .tree-file.active {
-      background: rgba(31, 111, 235, 0.12);
-      border-left: 2px solid #58a6ff;
-      color: #f0f6fc;
+      background: var(--active-bg);
+      border-left: 2px solid var(--text-link);
+      color: var(--text-bright);
     }
 
     /* ------------------------------------------------------------------ */
@@ -525,7 +526,7 @@
 
     #browse-content-wrapper {
       grid-area: content;
-      background: #0d1117;
+      background: var(--bg-page);
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -537,19 +538,19 @@
     }
 
     .content-loading {
-      color: #8b949e;
+      color: var(--text-muted);
       font-style: italic;
       padding: 24px 0;
     }
 
     .content-empty {
-      color: #484f58;
+      color: var(--text-dimmed);
       font-style: italic;
       padding: 24px 0;
     }
 
     .content-error {
-      color: #f85149;
+      color: var(--status-danger);
       padding: 24px 0;
     }
 
@@ -575,13 +576,13 @@
       align-items: center;
       gap: 12px;
       padding: 16px 24px 12px;
-      border-bottom: 1px solid #21262d;
-      background: #161b22;
+      border-bottom: 1px solid var(--border-default);
+      background: var(--bg-surface);
       flex-shrink: 0;
     }
 
     #back-to-dashboard {
-      color: #58a6ff;
+      color: var(--text-link);
       text-decoration: none;
       font-size: 13px;
       white-space: nowrap;
@@ -595,7 +596,7 @@
     #project-title {
       font-size: 16px;
       font-weight: 600;
-      color: #f0f6fc;
+      color: var(--text-bright);
       flex: 1;
     }
 
@@ -608,13 +609,13 @@
 
     #branch-bar label {
       font-size: 12px;
-      color: #8b949e;
+      color: var(--text-muted);
     }
 
     #branch-select {
-      background: #0d1117;
-      border: 1px solid #21262d;
-      color: #c9d1d9;
+      background: var(--bg-page);
+      border: 1px solid var(--border-default);
+      color: var(--text-primary);
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 12px;
@@ -625,13 +626,13 @@
 
     #branch-select:focus {
       outline: none;
-      border-color: #58a6ff;
+      border-color: var(--text-link);
     }
 
     /* Phase timeline */
     #phase-timeline-container {
       padding: 16px 24px;
-      border-bottom: 1px solid #21262d;
+      border-bottom: 1px solid var(--border-default);
       flex-shrink: 0;
       overflow-x: hidden;
     }
@@ -651,7 +652,7 @@
     }
 
     .phase-timeline-empty {
-      color: #484f58;
+      color: var(--text-dimmed);
       font-style: italic;
       font-size: 13px;
     }
@@ -668,17 +669,17 @@
     }
 
     .phase-node:hover {
-      background: rgba(88, 166, 255, 0.08);
+      background: var(--hover-subtle);
     }
 
     .phase-node--selected {
-      background: rgba(88, 166, 255, 0.12);
+      background: var(--active-bg);
     }
 
     .phase-connector {
       width: 32px;
       height: 2px;
-      background: #21262d;
+      background: var(--border-default);
       flex-shrink: 0;
     }
 
@@ -690,34 +691,34 @@
       transition: box-shadow 0.1s;
     }
 
-    .phase-dot--complete { background: #3fb950; }
-    .phase-dot--active   { background: #58a6ff; }
-    .phase-dot--pending  { background: #484f58; }
+    .phase-dot--complete { background: var(--status-complete); }
+    .phase-dot--active   { background: var(--status-active); }
+    .phase-dot--pending  { background: var(--text-dimmed); }
 
     .phase-node--selected .phase-dot {
-      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+      box-shadow: 0 0 0 3px var(--active-ring);
     }
 
     .phase-label {
       font-size: 11px;
-      color: #8b949e;
+      color: var(--text-muted);
       text-align: center;
       white-space: nowrap;
     }
 
     .phase-node--selected .phase-label {
-      color: #c9d1d9;
+      color: var(--text-primary);
     }
 
     .phase-progress {
       font-size: 10px;
-      color: #484f58;
+      color: var(--text-dimmed);
       text-align: center;
       white-space: nowrap;
     }
 
     .phase-node--selected .phase-progress {
-      color: #8b949e;
+      color: var(--text-muted);
     }
 
     /* Completed phases collapse to dot-only */
@@ -735,11 +736,11 @@
 
     /* In-progress phase always shows label and has active ring */
     .phase-node--in-progress .phase-label {
-      color: #58a6ff;
+      color: var(--status-active);
       font-weight: 600;
     }
     .phase-node--in-progress .phase-dot {
-      box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.3);
+      box-shadow: 0 0 0 3px var(--active-ring);
     }
 
     /* Sub-phase visual hierarchy */
@@ -768,29 +769,29 @@
     /* Sidebar file type indicators */
     .phase-file-item--complete::before {
       content: '\2713 ';
-      color: #3fb950;
+      color: var(--status-complete);
       font-weight: 600;
     }
     .phase-file-item--plan::before {
       content: '\25B6 ';
-      color: #58a6ff;
+      color: var(--text-link);
     }
     .phase-file-item--research::before {
       content: '\25CE ';
-      color: #8b949e;
+      color: var(--text-muted);
     }
     .phase-file-item--verification::before {
       content: '\2713\2713 ';
-      color: #3fb950;
+      color: var(--status-complete);
       font-weight: 600;
     }
     .phase-file-item--context::before {
       content: '\25C7 ';
-      color: #8b949e;
+      color: var(--text-muted);
     }
     .phase-file-item--validation::before {
       content: '\25C9 ';
-      color: #8b949e;
+      color: var(--text-muted);
     }
 
     /* Documentation panel */
@@ -803,15 +804,15 @@
     }
 
     #phase-file-list {
-      background: #161b22;
-      border-right: 1px solid #21262d;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-default);
       overflow-y: auto;
       padding: 8px 0;
     }
 
     .phase-file-item {
       display: block;
-      color: #58a6ff;
+      color: var(--text-link);
       text-decoration: none;
       padding: 5px 12px;
       font-size: 13px;
@@ -828,25 +829,25 @@
 
     .phase-file-item:hover {
       text-decoration: underline;
-      background: rgba(88, 166, 255, 0.05);
+      background: var(--hover-faint);
     }
 
     .phase-file-item.active {
-      background: rgba(31, 111, 235, 0.12);
-      border-left: 2px solid #58a6ff;
-      color: #f0f6fc;
+      background: var(--active-bg);
+      border-left: 2px solid var(--text-link);
+      color: var(--text-bright);
       padding-left: 10px;
     }
 
     .phase-file-empty {
-      color: #484f58;
+      color: var(--text-dimmed);
       font-style: italic;
       font-size: 13px;
       padding: 12px;
     }
 
     #phase-content {
-      background: #0d1117;
+      background: var(--bg-page);
       overflow-y: auto;
       padding: 24px;
     }
@@ -856,12 +857,12 @@
     }
 
     .phase-content-loading {
-      color: #8b949e;
+      color: var(--text-muted);
       font-style: italic;
     }
 
     .phase-content-error {
-      color: #f85149;
+      color: var(--status-danger);
     }
 
     /* Plan metadata bar — shown above PLAN.md content */
@@ -871,26 +872,26 @@
       gap: 12px;
       padding: 8px 12px;
       margin-bottom: 16px;
-      background: #161b22;
-      border: 1px solid #21262d;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
       border-radius: 6px;
       font-size: 12px;
-      color: #8b949e;
+      color: var(--text-muted);
     }
 
     .plan-meta-bar .meta-label {
-      color: #c9d1d9;
+      color: var(--text-primary);
       font-weight: 600;
     }
 
     .plan-meta-bar .meta-sep {
-      color: #484f58;
+      color: var(--text-dimmed);
     }
 
     /* Plan metadata card — structured replacement for plan-meta-bar */
     .plan-meta-card {
-      background: #161b22;
-      border: 1px solid #21262d;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
       border-radius: 6px;
       padding: 12px 16px;
       margin-bottom: 16px;
@@ -900,28 +901,28 @@
       font-size: 12px;
     }
     .plan-meta-field-label {
-      color: #8b949e;
+      color: var(--text-muted);
       font-weight: 600;
       white-space: nowrap;
       align-self: start;
     }
     .plan-meta-field-value {
-      color: #c9d1d9;
+      color: var(--text-primary);
     }
     .req-chip {
       display: inline-block;
-      background: #21262d;
-      border: 1px solid #30363d;
+      background: var(--border-default);
+      border: 1px solid var(--border-muted);
       border-radius: 12px;
       padding: 1px 8px;
       font-size: 11px;
-      color: #8b949e;
+      color: var(--text-muted);
       margin: 2px 3px 2px 0;
       font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     }
     .req-chip--dash {
-      color: #58a6ff;
-      border-color: rgba(88, 166, 255, 0.3);
+      color: var(--text-link);
+      border-color: var(--active-ring);
     }
 
     /* Browse view context bar — shows project info when navigating from dashboard */
@@ -931,29 +932,29 @@
       gap: 12px;
       padding: 8px 16px;
       margin: 16px 24px 0;
-      background: #161b22;
-      border: 1px solid #21262d;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
       border-radius: 6px;
       font-size: 13px;
       flex-shrink: 0;
     }
 
     #browse-context-bar .ctx-project {
-      color: #f0f6fc;
+      color: var(--text-bright);
       font-weight: 600;
     }
 
     #browse-context-bar .ctx-sep {
-      color: #484f58;
+      color: var(--text-dimmed);
     }
 
     #browse-context-bar .ctx-phase {
-      color: #8b949e;
+      color: var(--text-muted);
     }
 
     #browse-context-bar .ctx-link {
       margin-left: auto;
-      color: #58a6ff;
+      color: var(--text-link);
       text-decoration: none;
       font-size: 12px;
       flex-shrink: 0;
@@ -1203,7 +1204,7 @@
         section.className = 'dash-section';
         const empty = document.createElement('p');
         empty.className = 'dash-empty';
-        empty.innerHTML = 'No GSD projects found. <a href="/sources" style="color:#58a6ff">Add a source</a> to get started.';
+        empty.innerHTML = 'No GSD projects found. <a href="/sources" style="color:var(--text-link)">Add a source</a> to get started.';
         section.appendChild(empty);
         frag.appendChild(section);
       }
@@ -1474,7 +1475,7 @@
 
       if (sourcesList.length === 0) {
         document.getElementById('browse-content').innerHTML =
-          '<p class="content-empty">No sources registered. <a href="/sources" style="color:#58a6ff">Add a source</a> to get started.</p>';
+          '<p class="content-empty">No sources registered. <a href="/sources" style="color:var(--text-link)">Add a source</a> to get started.</p>';
         return;
       }
 

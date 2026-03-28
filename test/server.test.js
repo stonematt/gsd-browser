@@ -742,11 +742,11 @@ test('NAV-03: GET / response contains id="source-select" element', async () => {
   await fastify.close();
 });
 
-test('NAV-03: GET / response contains dark theme background color (#0d1117)', async () => {
+test('NAV-03: GET / response links theme.css (token-based theming)', async () => {
   const fastify = createServer(makeSources(testDir));
   const response = await fastify.inject({ method: 'GET', url: '/' });
   assert.equal(response.statusCode, 200);
-  assert.ok(response.body.includes('#0d1117'), 'response body should contain dark theme color #0d1117');
+  assert.ok(response.body.includes('href="/styles/theme.css"'), 'response body should link /styles/theme.css for token-based theming');
   await fastify.close();
 });
 

@@ -120,6 +120,28 @@ function parseRoadmapPhaseNames(content) {
 }
 
 /**
+ * Parse ROADMAP.md for phase goal text (the **Goal**: line after each phase heading).
+ * Returns { "4": "goal text", "4.5": "goal text", "4.5.1": "goal text", ... }
+ */
+function parseRoadmapPhaseGoals(content) {
+  const goals = {};
+  const lines = content.split('\n');
+  let currentPhase = null;
+  for (const line of lines) {
+    const mHeading = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)*)\s*:/);
+    if (mHeading) { currentPhase = mHeading[1]; continue; }
+    if (currentPhase) {
+      const mGoal = line.match(/^\*\*Goal\*\*\s*:?\s*(.+)/);
+      if (mGoal) {
+        goals[currentPhase] = mGoal[1].replace(/^\*?\*?\s*/, '').trim();
+        currentPhase = null;
+      }
+    }
+  }
+  return goals;
+}
+
+/**
  * Parse PLAN.md YAML frontmatter for wave, depends_on, and requirements fields.
  *
  * @param {string} content - PLAN.md file content
@@ -385,6 +407,7 @@ async function buildPhaseList(sourcePath) {
     parsedDirs.map(async ({ dir, parsed }) => {
       const info = await getPhaseInfo(path.join(phasesDir, dir));
       if (!info) return null;
+      const allReqs = new Set((info.planDetails || []).flatMap(p => p.requirements || []));
       return {
         num: parsed.num,
         numStr: parsed.numStr,
@@ -394,6 +417,7 @@ async function buildPhaseList(sourcePath) {
         completedPlans: info.completedPlans,
         files: info.files,
         planDetails: info.planDetails || [],
+        requirementCount: allReqs.size,
       };
     })
   );
@@ -424,6 +448,7 @@ async function buildPhaseListFromReader(reader) {
         (f) => reader.readFile(`.planning/phases/${dir}/${f}`),
         plans
       );
+      const allReqs = new Set((planDetails || []).flatMap(p => p.requirements || []));
       return {
         num: parsed.num,
         numStr: parsed.numStr,
@@ -433,6 +458,7 @@ async function buildPhaseListFromReader(reader) {
         completedPlans: summaries.length,
         files: entries,
         planDetails,
+        requirementCount: allReqs.size,
       };
     })
   );
@@ -801,12 +827,16 @@ function createServer(sources) {
       const phases = await buildPhaseList(source.path);
       const quickLinks = await buildQuickLinks(source.path);
 
-      // Parse ROADMAP.md for phase dependencies
+      // Parse ROADMAP.md for phase dependencies, names, and goals
       let dependencies = {};
+      let phaseNames = {};
+      let phaseGoals = {};
       try {
         const roadmapPath = path.join(source.path, '.planning', 'ROADMAP.md');
         const roadmapContent = await fs.readFile(roadmapPath, 'utf8');
         dependencies = parseRoadmapDeps(roadmapContent);
+        phaseNames = parseRoadmapPhaseNames(roadmapContent);
+        phaseGoals = parseRoadmapPhaseGoals(roadmapContent);
       } catch { /* no ROADMAP.md */ }
 
       // Attach dependsOn to each phase from the roadmap deps map
@@ -836,6 +866,8 @@ function createServer(sources) {
         quickLinks,
         phaseStatus: phases,
         dependencies,
+        phaseNames,
+        phaseGoals,
       });
     }
 
@@ -873,13 +905,15 @@ function createServer(sources) {
     }
     phases = await buildPhaseListFromReader(reader);
 
-    // Parse ROADMAP.md for phase dependencies and names
+    // Parse ROADMAP.md for phase dependencies, names, and goals
     let dependencies = {};
     let phaseNames = {};
+    let phaseGoals = {};
     const roadmapSrc = await reader.readFile('.planning/ROADMAP.md');
     if (roadmapSrc) {
       dependencies = parseRoadmapDeps(roadmapSrc);
       phaseNames = parseRoadmapPhaseNames(roadmapSrc);
+      phaseGoals = parseRoadmapPhaseGoals(roadmapSrc);
       for (const phase of phases) {
         phase.dependsOn = dependencies[phase.numStr] || [];
       }
@@ -894,6 +928,7 @@ function createServer(sources) {
       phases,
       dependencies,
       phaseNames,
+      phaseGoals,
       branch: branch || null,
       branches,
     });
@@ -1104,4 +1139,4 @@ async function start(port, sources, options = {}) {
   return fastify;
 }
 
-module.exports = { start, createServer, parseStateMd, parsePhaseDir, comparePhaseNums, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parseRoadmapPhaseNames, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };
+module.exports = { start, createServer, parseStateMd, parsePhaseDir, comparePhaseNums, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parseRoadmapPhaseNames, parseRoadmapPhaseGoals, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };

@@ -198,12 +198,13 @@ function buildPage({ filePath, bodyHtml, fragment = false }) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapedPath}</title>
+  <link rel="stylesheet" href="/styles/theme.css">
   <link rel="stylesheet" href="/styles/markdown.css">
 </head>
 <body>
   <header class="breadcrumb">
-    <a href="/" style="color:#58a6ff;text-decoration:none">&larr; Home</a>
-    <span style="color:#8b949e;margin:0 6px">/</span>
+    <a href="/" style="color:var(--text-link);text-decoration:none">&larr; Home</a>
+    <span style="color:var(--text-muted);margin:0 6px">/</span>
     <code>${escapedPath}</code>
   </header>
   <main class="markdown-body">

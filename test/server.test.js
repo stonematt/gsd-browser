@@ -1,13 +1,13 @@
 'use strict';
 
-const { test, before, after } = require('node:test');
+const { test, before, after, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const os = require('node:os');
 const { execSync } = require('node:child_process');
 
-const { createServer, start, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parsePlanFrontmatter, buildPlanDetails } = require('../src/server.js');
+const { createServer, start, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parsePlanFrontmatter, buildPlanDetails, comparePhaseNums, parseRoadmapPhaseGoals } = require('../src/server.js');
 const { initRenderer } = require('../src/renderer.js');
 
 let testDir;
@@ -1216,4 +1216,113 @@ test('DASH-12: buildPlanDetails includes empty requirements array when plan file
   const result = await buildPlanDetails(readFn, ['01-PLAN.md']);
   assert.equal(result.length, 1);
   assert.deepEqual(result[0].requirements, []);
+});
+
+// ============================================================
+// Phase 4.5.3 Plan 01 - Task 1: Depth-2 regex fixes and comparePhaseNums (TDD)
+// ============================================================
+
+describe('parsePhaseDir depth-2', () => {
+  test('parsePhaseDir parses depth-2 phase dir "04.5.1-dashboard-ux-polish"', () => {
+    const result = parsePhaseDir('04.5.1-dashboard-ux-polish');
+    assert.ok(result, 'should parse depth-2 dir name');
+    assert.equal(result.numStr, '04.5.1');
+    assert.equal(result.slug, 'dashboard-ux-polish');
+    assert.equal(result.dir, '04.5.1-dashboard-ux-polish');
+  });
+
+  test('parsePhaseDir parses depth-2 phase dir "04.5.2-theme-token-system"', () => {
+    const result = parsePhaseDir('04.5.2-theme-token-system');
+    assert.ok(result, 'should parse 04.5.2-theme-token-system');
+    assert.equal(result.numStr, '04.5.2');
+    assert.equal(result.slug, 'theme-token-system');
+  });
+
+  test('parsePhaseDir parses depth-2 phase dir "04.5.3-dashboard-tile-redesign"', () => {
+    const result = parsePhaseDir('04.5.3-dashboard-tile-redesign');
+    assert.ok(result, 'should parse 04.5.3-dashboard-tile-redesign');
+    assert.equal(result.numStr, '04.5.3');
+    assert.equal(result.slug, 'dashboard-tile-redesign');
+  });
+
+  test('parsePhaseDir still parses integer dir "01-foundation"', () => {
+    const result = parsePhaseDir('01-foundation');
+    assert.ok(result, 'should still parse integer dir');
+    assert.equal(result.numStr, '01');
+    assert.equal(result.slug, 'foundation');
+  });
+
+  test('parsePhaseDir still parses decimal dir "04.5-gsd-dashboard"', () => {
+    const result = parsePhaseDir('04.5-gsd-dashboard');
+    assert.ok(result, 'should still parse decimal dir');
+    assert.equal(result.numStr, '04.5');
+    assert.equal(result.slug, 'gsd-dashboard');
+  });
+});
+
+describe('parseRoadmapPhaseNames depth-2', () => {
+  const { parseRoadmapPhaseNames } = require('../src/server.js');
+
+  test('parseRoadmapPhaseNames extracts name for depth-2 phase heading', () => {
+    const content = [
+      '### Phase 4.5.1: Dashboard UX Polish',
+      'Some text',
+      '### Phase 4.5.2: Theme Token System (INSERTED)',
+      'More text',
+    ].join('\n');
+    const names = parseRoadmapPhaseNames(content);
+    assert.equal(names['4.5.1'], 'Dashboard UX Polish');
+    assert.equal(names['4.5.2'], 'Theme Token System');
+  });
+
+  test('parseRoadmapPhaseNames still works for depth-0 and depth-1 headings', () => {
+    const content = [
+      '### Phase 4: Browser UI',
+      'text',
+      '### Phase 4.5: GSD Dashboard',
+      'text',
+    ].join('\n');
+    const names = parseRoadmapPhaseNames(content);
+    assert.equal(names['4'], 'Browser UI');
+    assert.equal(names['4.5'], 'GSD Dashboard');
+  });
+});
+
+describe('comparePhaseNums', () => {
+  test('comparePhaseNums("4", "4.5") returns negative (4 before 4.5)', () => {
+    assert.ok(comparePhaseNums('4', '4.5') < 0);
+  });
+
+  test('comparePhaseNums("4.5", "4.5.1") returns negative', () => {
+    assert.ok(comparePhaseNums('4.5', '4.5.1') < 0);
+  });
+
+  test('comparePhaseNums("4.5.1", "4.5.2") returns negative', () => {
+    assert.ok(comparePhaseNums('4.5.1', '4.5.2') < 0);
+  });
+
+  test('comparePhaseNums("4.5.2", "5") returns negative', () => {
+    assert.ok(comparePhaseNums('4.5.2', '5') < 0);
+  });
+
+  test('comparePhaseNums("4", "4") returns 0', () => {
+    assert.equal(comparePhaseNums('4', '4'), 0);
+  });
+
+  test('comparePhaseNums("4.5", "4") returns positive', () => {
+    assert.ok(comparePhaseNums('4.5', '4') > 0);
+  });
+
+  test('phases with numStr sort correctly using comparePhaseNums', () => {
+    const phases = [
+      { numStr: '4.5.2' },
+      { numStr: '4' },
+      { numStr: '4.5.1' },
+      { numStr: '5' },
+      { numStr: '4.5' },
+    ];
+    phases.sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
+    const order = phases.map(p => p.numStr);
+    assert.deepEqual(order, ['4', '4.5', '4.5.1', '4.5.2', '5']);
+  });
 });

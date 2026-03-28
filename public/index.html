@@ -245,67 +245,87 @@
       margin-top: 2px;
     }
 
-    /* Mini timeline */
-    .mini-timeline {
+    /* History strip — compressed completed phase rectangles with branching topology */
+    .card-history-strip {
       display: flex;
-      align-items: center;
-      gap: 0;
-      margin: 12px 0 10px;
-      overflow-x: auto;
-      padding-bottom: 2px;
+      flex-wrap: wrap;
+      gap: 3px;
+      padding: 8px 0;
+      align-items: flex-start;
     }
 
-    .mini-phase {
+    .history-parent-group {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      flex-shrink: 0;
+      gap: 2px;
     }
 
-    .mini-dot {
-      width: 10px;
-      height: 10px;
+    .history-rect {
+      border-radius: 3px;
+      cursor: default;
+      transition: opacity 0.15s;
+    }
+    .history-rect:hover { opacity: 0.8; }
+    .history-rect--complete { background: var(--status-complete); }
+    .history-rect--active { background: var(--status-active); box-shadow: 0 0 6px var(--active-glow); }
+    .history-rect--pending { background: var(--status-pending); }
+
+    .history-subphase-tier {
+      display: flex;
+      gap: 2px;
+      padding-left: 4px;
+    }
+
+    /* Frontier list — active/future phases with full names and goals */
+    .card-frontier {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 6px 0;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .frontier-item {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .frontier-item--depth-1 { padding-left: 12px; }
+    .frontier-item--depth-2 { padding-left: 24px; }
+
+    .frontier-dot {
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       flex-shrink: 0;
+      margin-top: 3px;
     }
+    .frontier-dot--active { background: var(--status-active); box-shadow: 0 0 4px var(--active-glow); }
+    .frontier-dot--pending { background: var(--status-pending); }
+    .frontier-dot--complete { background: var(--status-complete); }
 
-    .mini-dot--complete { background: var(--status-complete); }
-    .mini-dot--active {
-      background: var(--status-active);
-      width: 14px;
-      height: 14px;
-      box-shadow: 0 0 6px var(--active-glow);
-    }
-    .mini-dot--pending { background: var(--text-dimmed); }
-
-    .mini-num {
-      font-size: 9px;
-      color: var(--text-dimmed);
-      line-height: 1;
-    }
-
-    .mini-phase--active .mini-num {
-      color: var(--status-active);
+    .frontier-slug {
       font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
     }
 
-    .mini-connector {
-      width: 8px;
-      height: 2px;
-      background: var(--border-default);
-      flex-shrink: 0;
-      align-self: flex-start;
-      margin-top: 4px;
+    .frontier-goal {
+      color: var(--text-dimmed);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
     }
 
-    .mini-connector--dep {
-      background: var(--text-dimmed);
-      height: 2px;
-      background-image: repeating-linear-gradient(
-        90deg, var(--text-dimmed) 0px, var(--text-dimmed) 3px, transparent 3px, transparent 6px
-      );
-      background-color: transparent;
+    .frontier-progress {
+      color: var(--text-secondary);
+      font-size: 11px;
+      white-space: nowrap;
     }
 
     .quick-links {
@@ -752,18 +772,6 @@
     .phase-node--subphase .phase-dot {
       width: 12px;
       height: 12px;
-    }
-
-    /* Mini sub-phase visual hierarchy */
-    .mini-phase--subphase {
-      margin-left: -2px;
-    }
-    .mini-phase--subphase .mini-dot {
-      width: 6px;
-      height: 6px;
-    }
-    .mini-phase--subphase .mini-num {
-      font-size: 9px;
     }
 
     /* Sidebar file type indicators */
@@ -1322,56 +1330,124 @@
       let allPhases = phases;
       if (Object.keys(deps).length > 0) {
         const roadmapPhaseNums = Object.keys(deps)
-          .sort((a, b) => parseFloat(a) - parseFloat(b));
-        const existingFloats = new Set(phases.map(p => parseFloat(p.numStr)));
+          .sort((a, b) => comparePhaseNums(a, b));
+        const existingNums = new Set(phases.map(p => String(p.numStr)));
         const unstartedPhases = roadmapPhaseNums
-          .filter(num => !existingFloats.has(parseFloat(num)))
+          .filter(num => !existingNums.has(String(num)))
           .map(num => ({ numStr: num, status: 'pending', planCount: 0, completedPlans: 0, slug: '' }));
         allPhases = [...phases, ...unstartedPhases]
-          .sort((a, b) => parseFloat(a.numStr) - parseFloat(b.numStr));
+          .sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
       }
 
-      // Mini timeline with phase numbers
+      // History strip + frontier list
       if (allPhases.length > 0) {
-        const timeline = document.createElement('div');
-        timeline.className = 'mini-timeline';
+        const phaseGoals = project.phaseGoals || {};
+        const phaseNames = project.phaseNames || {};
 
-        for (let i = 0; i < allPhases.length; i++) {
-          const phase = allPhases[i];
-          const isActive = phase.status === 'in-progress';
-          const statusClass = phase.status === 'complete' ? 'complete'
-            : isActive ? 'active' : 'pending';
+        const { history, frontier } = splitHistoryFrontier(allPhases);
 
-          const phaseEl = document.createElement('div');
-          let miniCls = 'mini-phase' + (isActive ? ' mini-phase--active' : '');
-          if (isSubPhase(phase.numStr)) miniCls += ' mini-phase--subphase';
-          phaseEl.className = miniCls;
-          phaseEl.title = phase.numStr + ': ' + phase.slug + ' (' + phase.completedPlans + '/' + phase.planCount + ' plans)';
+        // History strip: proportional colored rectangles with branching sub-phases
+        if (history.length > 0) {
+          const strip = document.createElement('div');
+          strip.className = 'card-history-strip';
 
-          const dot = document.createElement('div');
-          dot.className = 'mini-dot mini-dot--' + statusClass;
-          phaseEl.appendChild(dot);
+          const historyTree = buildPhaseTree(history);
 
-          const num = document.createElement('span');
-          num.className = 'mini-num';
-          num.textContent = phase.numStr;
-          phaseEl.appendChild(num);
+          for (const root of historyTree) {
+            const group = document.createElement('div');
+            group.className = 'history-parent-group';
 
-          timeline.appendChild(phaseEl);
+            const rootDims = rectDimensions(root.planCount, root.requirementCount, 1.0);
+            const rootRect = document.createElement('div');
+            rootRect.className = 'history-rect history-rect--' + root.status;
+            rootRect.style.width = rootDims.width + 'px';
+            rootRect.style.height = rootDims.height + 'px';
+            const rootName = phaseNames[String(root.numStr)] || root.slug || root.numStr;
+            rootRect.title = 'Phase ' + root.numStr + ': ' + rootName + '\n' + (root.planCount || 0) + ' plans, ' + (root.requirementCount || 0) + ' requirements';
+            group.appendChild(rootRect);
 
-          // Connector (not after last)
-          if (i < allPhases.length - 1) {
-            const conn = document.createElement('div');
-            // Check if next phase depends on current (shared dependency connector)
-            const nextPhase = allPhases[i + 1];
-            const nextDeps = deps[nextPhase.numStr] || nextPhase.dependsOn || [];
-            const isDep = nextDeps.includes(phase.numStr);
-            conn.className = 'mini-connector' + (isDep ? ' mini-connector--dep' : '');
-            timeline.appendChild(conn);
+            if (root.children && root.children.length > 0) {
+              const tier1 = document.createElement('div');
+              tier1.className = 'history-subphase-tier';
+
+              for (const child of root.children) {
+                const childDims = rectDimensions(child.planCount, child.requirementCount, 0.75);
+                const childRect = document.createElement('div');
+                childRect.className = 'history-rect history-rect--' + child.status;
+                childRect.style.width = childDims.width + 'px';
+                childRect.style.height = childDims.height + 'px';
+                const childName = phaseNames[String(child.numStr)] || child.slug || child.numStr;
+                childRect.title = 'Phase ' + child.numStr + ': ' + childName + '\n' + (child.planCount || 0) + ' plans, ' + (child.requirementCount || 0) + ' requirements';
+                tier1.appendChild(childRect);
+
+                // Depth-2 grandchildren in a nested tier
+                if (child.children && child.children.length > 0) {
+                  const tier2 = document.createElement('div');
+                  tier2.className = 'history-subphase-tier';
+                  for (const grandchild of child.children) {
+                    const gcDims = rectDimensions(grandchild.planCount, grandchild.requirementCount, 0.75);
+                    const gcRect = document.createElement('div');
+                    gcRect.className = 'history-rect history-rect--' + grandchild.status;
+                    gcRect.style.width = gcDims.width + 'px';
+                    gcRect.style.height = gcDims.height + 'px';
+                    const gcName = phaseNames[String(grandchild.numStr)] || grandchild.slug || grandchild.numStr;
+                    gcRect.title = 'Phase ' + grandchild.numStr + ': ' + gcName + '\n' + (grandchild.planCount || 0) + ' plans, ' + (grandchild.requirementCount || 0) + ' requirements';
+                    tier2.appendChild(gcRect);
+                  }
+                  group.appendChild(tier2);
+                }
+              }
+
+              group.appendChild(tier1);
+            }
+
+            strip.appendChild(group);
           }
+
+          card.appendChild(strip);
         }
 
-        card.appendChild(timeline);
+        // Frontier list: active/future phases with full slug names and goal excerpts
+        if (frontier.length > 0) {
+          const frontierEl = document.createElement('div');
+          frontierEl.className = 'card-frontier';
+
+          for (const phase of frontier) {
+            const depth = getPhaseDepth(phase.numStr);
+            const item = document.createElement('div');
+            item.className = 'frontier-item' + (depth > 0 ? ' frontier-item--depth-' + depth : '');
+
+            const dot = document.createElement('div');
+            const dotStatus = phase.status === 'in-progress' ? 'active' : phase.status === 'complete' ? 'complete' : 'pending';
+            dot.className = 'frontier-dot frontier-dot--' + dotStatus;
+            item.appendChild(dot);
+
+            const slugEl = document.createElement('span');
+            slugEl.className = 'frontier-slug';
+            const phaseName = phaseNames[String(phase.numStr)] || phase.slug || '';
+            slugEl.textContent = phaseName ? phase.numStr + ' ' + phaseName : phase.numStr;
+            item.appendChild(slugEl);
+
+            const goalText = phaseGoals[String(phase.numStr)] || '';
+            if (goalText) {
+              const goalEl = document.createElement('span');
+              goalEl.className = 'frontier-goal';
+              goalEl.textContent = goalText.length > 40 ? goalText.slice(0, 40) + '\u2026' : goalText;
+              item.appendChild(goalEl);
+            }
+
+            if (phase.status === 'in-progress' && phase.planCount) {
+              const prog = document.createElement('span');
+              prog.className = 'frontier-progress';
+              prog.textContent = (phase.completedPlans || 0) + '/' + phase.planCount + ' plans';
+              item.appendChild(prog);
+            }
+
+            frontierEl.appendChild(item);
+          }
+
+          card.appendChild(frontierEl);
+        }
       }
 
       // Quick-links (only those that exist) — use absolute paths for correct per-source rendering
@@ -1856,12 +1932,12 @@
         const phases = data.phases || [];
         const deps = data.dependencies || {};
         const pNames = data.phaseNames || {};
-        const existingFloats = new Set(phases.map(p => parseFloat(p.numStr)));
+        const existingNums = new Set(phases.map(p => String(p.numStr)));
         const pendingPhases = Object.keys(deps)
-          .filter(num => !existingFloats.has(parseFloat(num)))
+          .filter(num => !existingNums.has(String(num)))
           .map(num => ({ numStr: num, status: 'pending', slug: pNames[num] || '', files: [], planDetails: [] }));
         const allTimelinePhases = [...phases, ...pendingPhases]
-          .sort((a, b) => parseFloat(a.numStr) - parseFloat(b.numStr));
+          .sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
         renderTimeline(allTimelinePhases);
 
         // Auto-select phase: first in-progress, then last complete, then first
@@ -1900,31 +1976,72 @@
       return 'other';
     }
 
-    function isSubPhase(numStr) {
-      return String(numStr).includes('.');
+    function getPhaseDepth(numStr) {
+      return String(numStr).split('.').length - 1; // "4"->0, "4.5"->1, "4.5.1"->2
     }
 
-    function getParentPhaseNum(numStr) {
-      return String(numStr).split('.')[0];
+    function getImmediateParent(numStr) {
+      const parts = String(numStr).split('.');
+      if (parts.length <= 1) return null;
+      return parts.slice(0, -1).join('.');
+    }
+
+    function comparePhaseNums(a, b) {
+      const partsA = String(a).split('.').map(Number);
+      const partsB = String(b).split('.').map(Number);
+      const len = Math.max(partsA.length, partsB.length);
+      for (let i = 0; i < len; i++) {
+        const diff = (partsA[i] || 0) - (partsB[i] || 0);
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    }
+
+    function buildPhaseTree(phases) {
+      const byKey = {};
+      const roots = [];
+      for (const phase of phases) {
+        byKey[String(phase.numStr)] = { ...phase, children: [] };
+      }
+      for (const phase of phases) {
+        const parentNum = getImmediateParent(phase.numStr);
+        if (parentNum && byKey[parentNum]) {
+          byKey[parentNum].children.push(byKey[String(phase.numStr)]);
+        } else {
+          roots.push(byKey[String(phase.numStr)]);
+        }
+      }
+      return roots;
+    }
+
+    function splitHistoryFrontier(phases) {
+      // phases: flat sorted array
+      let boundaryIdx = phases.length;
+      for (let i = 0; i < phases.length; i++) {
+        if (phases[i].status !== 'complete') {
+          boundaryIdx = i;
+          break;
+        }
+      }
+      return { history: phases.slice(0, boundaryIdx), frontier: phases.slice(boundaryIdx) };
+    }
+
+    function rectDimensions(planCount, reqCount, scale) {
+      const minW = 12, minH = 12;
+      const pxPerPlan = 8, pxPerReq = 6;
+      const w = Math.max(minW, (planCount || 0) * pxPerPlan) * scale;
+      const h = Math.max(minH, (reqCount || 0) * pxPerReq) * scale;
+      return { width: Math.round(w), height: Math.round(h) };
     }
 
     function groupPhases(phases) {
-      const groups = [];
-      for (const phase of phases) {
-        if (!isSubPhase(phase.numStr)) {
-          groups.push({ parent: phase, children: [] });
-        } else {
-          const parentNum = getParentPhaseNum(phase.numStr);
-          const group = groups.find(g => g.parent.numStr === parentNum);
-          if (group) {
-            group.children.push(phase);
-          } else {
-            // Orphaned sub-phase — render as peer (fallback)
-            groups.push({ parent: phase, children: [] });
-          }
-        }
-      }
-      return groups;
+      // Legacy adapter: converts buildPhaseTree output format to old {parent, children} array format
+      // Used by renderTimeline() for the detail page — detail page layout not being redesigned
+      const roots = buildPhaseTree(phases);
+      return roots.map(root => ({
+        parent: { ...root, children: undefined },
+        children: root.children || []
+      }));
     }
 
     function makePhaseNode(phase, extraClasses) {

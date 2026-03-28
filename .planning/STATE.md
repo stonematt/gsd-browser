@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Phase 4.5.3 context gathered
-last_updated: "2026-03-28T15:12:32.458Z"
+stopped_at: Completed 04.5.3-01-PLAN.md
+last_updated: "2026-03-28T18:08:56.715Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
   completed_phases: 7
-  total_plans: 17
-  completed_plans: 17
+  total_plans: 19
+  completed_plans: 18
   percent: 43
 ---
 
@@ -66,6 +66,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5.1-dashboard-ux-polish P02 | 20min | 3 tasks | 2 files |
 | Phase 04.5.2-theme-token-system P01 | 10min | 2 tasks | 5 files |
 | Phase 04.5.2-theme-token-system P02 | 15 | 2 tasks | 2 files |
+| Phase 04.5.3-dashboard-tile-redesign P01 | 12min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,10 @@ Recent decisions affecting current work:
 - [Phase 04.5.2-theme-token-system]: Named rgba tokens (--focus-ring, --hover-faint, etc.) rather than color-mix() for semi-transparent variants
 - [Phase 04.5.2-theme-token-system]: markdown.css .pl-* syntax highlight classes left hardcoded — Shiki fallback path only, out of scope
 - [Phase 04.5.2-theme-token-system]: color-scheme changed from dark to dark light in markdown.css to fix task list checkboxes in light mode
+- [Phase 04.5.3-01]: Use (\d+(?:\.\d+)*) regex for unlimited depth-N phase parsing in parsePhaseDir and parseRoadmapPhaseNames
+- [Phase 04.5.3-01]: comparePhaseNums replaces parseFloat-based sort in both buildPhaseList and buildPhaseListFromReader — preserves depth-2 ordering
+- [Phase 04.5.3-01]: requirementCount computed as Set().size over all planDetails[].requirements — deduped across plans
+- [Phase 04.5.3-01]: parseRoadmapPhaseGoals parses **Goal**: line after each phase heading; resets currentPhase to null after capture
 
 ### Roadmap Evolution
 
@@ -139,6 +144,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T15:12:32.456Z
-Stopped at: Phase 4.5.3 context gathered
-Resume file: .planning/phases/04.5.3-dashboard-tile-redesign/04.5.3-CONTEXT.md
+Last session: 2026-03-28T18:08:56.712Z
+Stopped at: Completed 04.5.3-01-PLAN.md
+Resume file: None

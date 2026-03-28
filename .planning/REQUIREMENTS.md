@@ -60,9 +60,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DASH-10**: Sidebar distinguishes plan completion status — phases with SUMMARY.md show as complete vs in-progress/pending
 - [x] **DASH-11**: Plan metadata (wave, dependencies, requirements) renders as structured card with labeled fields, not raw frontmatter text
 - [x] **DASH-12**: Requirement tags in plan metadata render as styled chips/badges
-- [ ] **DASH-13**: Completed phases on cards render as compressed indicators (rectangles) without text labels, preserving card space for active work
-- [ ] **DASH-14**: Sub-phases branch visually below their integer parent with depth-tier rows, not as linear peers
-- [ ] **DASH-15**: Frontier (active/future) phases display full slug name and goal excerpt on the card
+- [x] **DASH-13**: Completed phases on cards render as compressed indicators (rectangles) without text labels, preserving card space for active work
+- [x] **DASH-14**: Sub-phases branch visually below their integer parent with depth-tier rows, not as linear peers
+- [x] **DASH-15**: Frontier (active/future) phases display full slug name and goal excerpt on the card
 
 ### Distribution
 
@@ -145,9 +145,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-10 | Phase 4.5.1 | Complete |
 | DASH-11 | Phase 4.5.1 | Complete |
 | DASH-12 | Phase 4.5.1 | Complete |
-| DASH-13 | Phase 4.5.3 | Pending |
-| DASH-14 | Phase 4.5.3 | Pending |
-| DASH-15 | Phase 4.5.3 | Pending |
+| DASH-13 | Phase 4.5.3 | Complete |
+| DASH-14 | Phase 4.5.3 | Complete |
+| DASH-15 | Phase 4.5.3 | Complete |
 | DIST-01 | Phase 6 | Pending |
 | DIST-02 | Phase 6 | Pending |
 

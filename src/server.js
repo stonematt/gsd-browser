@@ -64,6 +64,15 @@ function parseStateMd(content) {
 }
 
 /**
+ * Normalize a phase number by stripping leading zeros from each segment.
+ * "01" → "1", "04.5.3" → "4.5.3", "04.5" → "4.5"
+ * Used for display and map lookups (ROADMAP keys are always unpadded).
+ */
+function normalizePhaseNum(numStr) {
+  return String(numStr).split('.').map(s => String(parseInt(s, 10))).join('.');
+}
+
+/**
  * Parse ROADMAP.md to extract phase dependency information.
  * Looks for "### Phase N: Name" headers followed by "**Depends on**: Phase X, Phase Y".
  *
@@ -223,6 +232,7 @@ function parsePhaseDir(dirName) {
   return {
     num: parseFloat(m[1]),
     numStr: m[1],
+    displayNum: normalizePhaseNum(m[1]),
     slug: m[2],
     dir: dirName,
   };
@@ -411,6 +421,7 @@ async function buildPhaseList(sourcePath) {
       return {
         num: parsed.num,
         numStr: parsed.numStr,
+        displayNum: parsed.displayNum,
         slug: parsed.slug,
         status: info.status,
         planCount: info.planCount,
@@ -452,6 +463,7 @@ async function buildPhaseListFromReader(reader) {
       return {
         num: parsed.num,
         numStr: parsed.numStr,
+        displayNum: parsed.displayNum,
         slug: parsed.slug,
         status,
         planCount: plans.length,
@@ -1139,4 +1151,4 @@ async function start(port, sources, options = {}) {
   return fastify;
 }
 
-module.exports = { start, createServer, parseStateMd, parsePhaseDir, comparePhaseNums, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parseRoadmapPhaseNames, parseRoadmapPhaseGoals, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };
+module.exports = { start, createServer, parseStateMd, parsePhaseDir, normalizePhaseNum, comparePhaseNums, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parseRoadmapPhaseNames, parseRoadmapPhaseGoals, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };

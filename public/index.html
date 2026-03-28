@@ -1293,7 +1293,7 @@
 
         const title = document.createElement('div');
         title.className = 'card-phase-title';
-        title.textContent = '\u25B6 Phase ' + activePhase.numStr + ': ' + activePhase.slug;
+        title.textContent = '\u25B6 Phase ' + (activePhase.displayNum || activePhase.numStr) + ': ' + activePhase.slug;
         callout.appendChild(title);
 
         const prog = document.createElement('div');
@@ -1331,10 +1331,10 @@
       if (Object.keys(deps).length > 0) {
         const roadmapPhaseNums = Object.keys(deps)
           .sort((a, b) => comparePhaseNums(a, b));
-        const existingNums = new Set(phases.map(p => String(p.numStr)));
+        const existingNums = new Set(phases.map(p => String(p.displayNum || p.numStr)));
         const unstartedPhases = roadmapPhaseNums
           .filter(num => !existingNums.has(String(num)))
-          .map(num => ({ numStr: num, status: 'pending', planCount: 0, completedPlans: 0, slug: '' }));
+          .map(num => ({ numStr: num, displayNum: num, status: 'pending', planCount: 0, completedPlans: 0, slug: '' }));
         allPhases = [...phases, ...unstartedPhases]
           .sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
       }
@@ -1362,8 +1362,9 @@
             rootRect.className = 'history-rect history-rect--' + root.status;
             rootRect.style.width = rootDims.width + 'px';
             rootRect.style.height = rootDims.height + 'px';
-            const rootName = phaseNames[String(root.numStr)] || root.slug || root.numStr;
-            rootRect.title = 'Phase ' + root.numStr + ': ' + rootName + '\n' + (root.planCount || 0) + ' plans, ' + (root.requirementCount || 0) + ' requirements';
+            const rootDisp = root.displayNum || root.numStr;
+            const rootName = phaseNames[rootDisp] || root.slug || rootDisp;
+            rootRect.title = 'Phase ' + rootDisp + ': ' + rootName + '\n' + (root.planCount || 0) + ' plans, ' + (root.requirementCount || 0) + ' requirements';
             group.appendChild(rootRect);
 
             if (root.children && root.children.length > 0) {
@@ -1376,8 +1377,9 @@
                 childRect.className = 'history-rect history-rect--' + child.status;
                 childRect.style.width = childDims.width + 'px';
                 childRect.style.height = childDims.height + 'px';
-                const childName = phaseNames[String(child.numStr)] || child.slug || child.numStr;
-                childRect.title = 'Phase ' + child.numStr + ': ' + childName + '\n' + (child.planCount || 0) + ' plans, ' + (child.requirementCount || 0) + ' requirements';
+                const childDisp = child.displayNum || child.numStr;
+                const childName = phaseNames[childDisp] || child.slug || childDisp;
+                childRect.title = 'Phase ' + childDisp + ': ' + childName + '\n' + (child.planCount || 0) + ' plans, ' + (child.requirementCount || 0) + ' requirements';
                 tier1.appendChild(childRect);
 
                 // Depth-2 grandchildren in a nested tier
@@ -1390,8 +1392,9 @@
                     gcRect.className = 'history-rect history-rect--' + grandchild.status;
                     gcRect.style.width = gcDims.width + 'px';
                     gcRect.style.height = gcDims.height + 'px';
-                    const gcName = phaseNames[String(grandchild.numStr)] || grandchild.slug || grandchild.numStr;
-                    gcRect.title = 'Phase ' + grandchild.numStr + ': ' + gcName + '\n' + (grandchild.planCount || 0) + ' plans, ' + (grandchild.requirementCount || 0) + ' requirements';
+                    const gcDisp = grandchild.displayNum || grandchild.numStr;
+                    const gcName = phaseNames[gcDisp] || grandchild.slug || gcDisp;
+                    gcRect.title = 'Phase ' + gcDisp + ': ' + gcName + '\n' + (grandchild.planCount || 0) + ' plans, ' + (grandchild.requirementCount || 0) + ' requirements';
                     tier2.appendChild(gcRect);
                   }
                   group.appendChild(tier2);
@@ -1424,11 +1427,12 @@
 
             const slugEl = document.createElement('span');
             slugEl.className = 'frontier-slug';
-            const phaseName = phaseNames[String(phase.numStr)] || phase.slug || '';
-            slugEl.textContent = phaseName ? phase.numStr + ' ' + phaseName : phase.numStr;
+            const phaseDisp = phase.displayNum || phase.numStr;
+            const phaseName = phaseNames[phaseDisp] || phase.slug || '';
+            slugEl.textContent = phaseName ? phaseDisp + ' ' + phaseName : phaseDisp;
             item.appendChild(slugEl);
 
-            const goalText = phaseGoals[String(phase.numStr)] || '';
+            const goalText = phaseGoals[phaseDisp] || '';
             if (goalText) {
               const goalEl = document.createElement('span');
               goalEl.className = 'frontier-goal';
@@ -1522,7 +1526,7 @@
 
         const phaseSpan = document.createElement('span');
         phaseSpan.className = 'ctx-phase';
-        let phaseText = 'Phase ' + activePhase.numStr + ': ' + activePhase.slug;
+        let phaseText = 'Phase ' + (activePhase.displayNum || activePhase.numStr) + ': ' + activePhase.slug;
         const pct = project.progress || {};
         if (pct.percent) phaseText += ' \u00B7 ' + pct.percent + '%';
         phaseSpan.textContent = phaseText;
@@ -1932,10 +1936,10 @@
         const phases = data.phases || [];
         const deps = data.dependencies || {};
         const pNames = data.phaseNames || {};
-        const existingNums = new Set(phases.map(p => String(p.numStr)));
+        const existingNums = new Set(phases.map(p => String(p.displayNum || p.numStr)));
         const pendingPhases = Object.keys(deps)
           .filter(num => !existingNums.has(String(num)))
-          .map(num => ({ numStr: num, status: 'pending', slug: pNames[num] || '', files: [], planDetails: [] }));
+          .map(num => ({ numStr: num, displayNum: num, status: 'pending', slug: pNames[num] || '', files: [], planDetails: [] }));
         const allTimelinePhases = [...phases, ...pendingPhases]
           .sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
         renderTimeline(allTimelinePhases);
@@ -2066,8 +2070,9 @@
       // Label: phase number + slug name (never truncate)
       const label = document.createElement('span');
       label.className = 'phase-label';
-      label.textContent = phase.numStr + ': ' + (phase.slug || 'Phase ' + phase.numStr);
-      label.title = 'Phase ' + phase.numStr + (phase.slug ? ' — ' + phase.slug : '');
+      const labelDisp = phase.displayNum || phase.numStr;
+      label.textContent = labelDisp + ': ' + (phase.slug || 'Phase ' + labelDisp);
+      label.title = 'Phase ' + labelDisp + (phase.slug ? ' — ' + phase.slug : '');
       node.appendChild(label);
 
       // Progress: "X/Y plans"

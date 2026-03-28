@@ -7,7 +7,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { execSync } = require('node:child_process');
 
-const { createServer, start, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parsePlanFrontmatter, buildPlanDetails, comparePhaseNums, parseRoadmapPhaseGoals } = require('../src/server.js');
+const { createServer, start, parseStateMd, parsePhaseDir, normalizePhaseNum, getPhaseInfo, isValidBranchName, parsePlanFrontmatter, buildPlanDetails, comparePhaseNums, parseRoadmapPhaseGoals } = require('../src/server.js');
 const { initRenderer } = require('../src/renderer.js');
 
 let testDir;
@@ -1257,6 +1257,45 @@ describe('parsePhaseDir depth-2', () => {
     assert.ok(result, 'should still parse decimal dir');
     assert.equal(result.numStr, '04.5');
     assert.equal(result.slug, 'gsd-dashboard');
+  });
+});
+
+describe('normalizePhaseNum', () => {
+  test('strips leading zeros from single-segment', () => {
+    assert.equal(normalizePhaseNum('01'), '1');
+    assert.equal(normalizePhaseNum('04'), '4');
+  });
+
+  test('strips leading zeros from multi-segment', () => {
+    assert.equal(normalizePhaseNum('04.5'), '4.5');
+    assert.equal(normalizePhaseNum('04.5.3'), '4.5.3');
+    assert.equal(normalizePhaseNum('04.05.03'), '4.5.3');
+  });
+
+  test('handles already-normalized values', () => {
+    assert.equal(normalizePhaseNum('1'), '1');
+    assert.equal(normalizePhaseNum('4.5.3'), '4.5.3');
+  });
+
+  test('handles numeric input', () => {
+    assert.equal(normalizePhaseNum(4.5), '4.5');
+  });
+});
+
+describe('parsePhaseDir displayNum', () => {
+  test('displayNum strips leading zeros from numStr', () => {
+    assert.equal(parsePhaseDir('01-foundation').displayNum, '1');
+    assert.equal(parsePhaseDir('04.5-gsd-dashboard').displayNum, '4.5');
+    assert.equal(parsePhaseDir('04.5.3-dashboard-tile-redesign').displayNum, '4.5.3');
+  });
+
+  test('displayNum matches ROADMAP heading keys (unpadded)', () => {
+    // ROADMAP uses "### Phase 1:", "### Phase 4.5:", "### Phase 4.5.3:"
+    // parsePhaseDir must produce displayNum that matches these keys
+    const phaseNames = { '1': 'Foundation', '4.5': 'GSD Dashboard', '4.5.3': 'Dashboard Tile Redesign' };
+    assert.equal(phaseNames[parsePhaseDir('01-foundation').displayNum], 'Foundation');
+    assert.equal(phaseNames[parsePhaseDir('04.5-gsd-dashboard').displayNum], 'GSD Dashboard');
+    assert.equal(phaseNames[parsePhaseDir('04.5.3-dashboard-tile-redesign').displayNum], 'Dashboard Tile Redesign');
   });
 });
 

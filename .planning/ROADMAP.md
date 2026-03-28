@@ -136,7 +136,11 @@ Plans:
   2. Dark mode renders identically to current appearance (no visual regression)
   3. Setting `prefers-color-scheme: light` in the browser produces a readable, properly-contrasted light theme
   4. Status colors (--status-complete, --status-active, --status-pending) are consistent across both themes
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04.5.2-01-PLAN.md — Create theme.css token file (Catppuccin Mocha/Latte) + migrate sources.html, renderer.js, markdown.css
+- [ ] 04.5.2-02-PLAN.md — Migrate index.html to token references + visual verification of both themes
 
 ### Phase 4.5.3: Dashboard Tile Redesign (INSERTED)
 
@@ -197,7 +201,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.
 | 4. Browser UI | 2/2 | Complete   | 2026-03-22 |
 | 4.5. GSD Dashboard | 3/3 | Complete   | 2026-03-24 |
 | 4.5.1. Dashboard UX Polish | 3/3 | Complete   | 2026-03-25 |
-| 4.5.2. Theme Token System | 0/TBD | Not started | - |
+| 4.5.2. Theme Token System | 0/2 | Not started | - |
 | 4.5.3. Dashboard Tile Redesign | 0/TBD | Not started | - |
 | 4.5.4. Detail Page Layout | 0/TBD | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |

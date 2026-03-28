@@ -1,0 +1,101 @@
+/* === theme.css — Catppuccin color token system === */
+/* Dark default: Catppuccin Mocha */
+/* Light override: Catppuccin Latte (via prefers-color-scheme) */
+
+/* === DARK THEME (default: Catppuccin Mocha) === */
+:root {
+  /* Backgrounds */
+  --bg-page:    #1e1e2e;  /* Mocha Base */
+  --bg-surface: #181825;  /* Mocha Mantle */
+  --bg-overlay: #313244;  /* Mocha Surface 0 */
+  --bg-code:    #181825;  /* Mocha Mantle — same as surface, distinct semantic role */
+
+  /* Borders */
+  --border-default: #45475a;  /* Mocha Surface 1 */
+  --border-muted:   #313244;  /* Mocha Surface 0 */
+
+  /* Text */
+  --text-primary:   #cdd6f4;  /* Mocha Text */
+  --text-secondary: #bac2de;  /* Mocha Subtext 1 */
+  --text-muted:     #6c7086;  /* Mocha Overlay 0 */
+  --text-dimmed:    #585b70;  /* Mocha Surface 2 */
+  --text-link:      #89b4fa;  /* Mocha Blue */
+  --text-bright:    #cdd6f4;  /* Mocha Text */
+
+  /* Status */
+  --status-complete:        #a6e3a1;                    /* Mocha Green */
+  --status-active:          #89b4fa;                    /* Mocha Blue */
+  --status-pending:         #585b70;                    /* Mocha Surface 2 */
+  --status-complete-text:   #a6e3a1;
+  --status-active-text:     #89b4fa;
+  --status-pending-text:    #6c7086;                    /* Mocha Overlay 0 */
+  --status-complete-bg:     rgba(166, 227, 161, 0.15);
+  --status-complete-border: rgba(166, 227, 161, 0.4);
+  --status-danger:          #f38ba8;                    /* Mocha Red */
+  --status-danger-bg:       rgba(243, 139, 168, 0.1);
+  --status-danger-border:   rgba(243, 139, 168, 0.3);
+
+  /* Interactive */
+  --btn-primary-bg:       #a6e3a1;  /* Mocha Green */
+  --btn-primary-text:     #1e1e2e;  /* Mocha Base (dark text on green) */
+  --btn-primary-hover-bg: #94e2d5;  /* Mocha Teal */
+  --btn-hover-bg:         #45475a;  /* Mocha Surface 1 */
+
+  /* Focus / Active States (semi-transparent — based on Mocha Blue #89b4fa) */
+  --focus-ring:   rgba(137, 180, 250, 0.15);
+  --hover-faint:  rgba(137, 180, 250, 0.05);
+  --hover-subtle: rgba(137, 180, 250, 0.08);
+  --active-bg:    rgba(137, 180, 250, 0.12);
+  --active-ring:  rgba(137, 180, 250, 0.3);
+  --active-glow:  rgba(137, 180, 250, 0.5);
+}
+
+/* === LIGHT THEME (override: Catppuccin Latte) === */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* Backgrounds */
+    --bg-page:    #eff1f5;  /* Latte Base */
+    --bg-surface: #e6e9ef;  /* Latte Mantle */
+    --bg-overlay: #ccd0da;  /* Latte Surface 0 */
+    --bg-code:    #e6e9ef;  /* Latte Mantle */
+
+    /* Borders */
+    --border-default: #bcc0cc;  /* Latte Surface 1 */
+    --border-muted:   #ccd0da;  /* Latte Surface 0 */
+
+    /* Text */
+    --text-primary:   #4c4f69;  /* Latte Text */
+    --text-secondary: #5c5f77;  /* Latte Subtext 1 */
+    --text-muted:     #9ca0b0;  /* Latte Overlay 0 */
+    --text-dimmed:    #acb0be;  /* Latte Surface 2 */
+    --text-link:      #1e66f5;  /* Latte Blue */
+    --text-bright:    #4c4f69;  /* Latte Text */
+
+    /* Status */
+    --status-complete:        #40a02b;                    /* Latte Green */
+    --status-active:          #1e66f5;                    /* Latte Blue */
+    --status-pending:         #acb0be;                    /* Latte Surface 2 */
+    --status-complete-text:   #40a02b;
+    --status-active-text:     #1e66f5;
+    --status-pending-text:    #9ca0b0;                    /* Latte Overlay 0 */
+    --status-complete-bg:     rgba(64, 160, 43, 0.15);
+    --status-complete-border: rgba(64, 160, 43, 0.4);
+    --status-danger:          #d20f39;                    /* Latte Red */
+    --status-danger-bg:       rgba(210, 15, 57, 0.1);
+    --status-danger-border:   rgba(210, 15, 57, 0.3);
+
+    /* Interactive */
+    --btn-primary-bg:       #40a02b;  /* Latte Green */
+    --btn-primary-text:     #eff1f5;  /* Latte Base */
+    --btn-primary-hover-bg: #179299;  /* Latte Teal */
+    --btn-hover-bg:         #bcc0cc;  /* Latte Surface 1 */
+
+    /* Focus / Active States (semi-transparent — based on Latte Blue #1e66f5) */
+    --focus-ring:   rgba(30, 102, 245, 0.15);
+    --hover-faint:  rgba(30, 102, 245, 0.05);
+    --hover-subtle: rgba(30, 102, 245, 0.08);
+    --active-bg:    rgba(30, 102, 245, 0.12);
+    --active-ring:  rgba(30, 102, 245, 0.3);
+    --active-glow:  rgba(30, 102, 245, 0.5);
+  }
+}

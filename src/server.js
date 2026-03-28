@@ -111,7 +111,7 @@ function parseRoadmapPhaseNames(content) {
   const names = {};
   const lines = content.split('\n');
   for (const line of lines) {
-    const m = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)?)\s*:\s*(.+)/);
+    const m = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)*)\s*:\s*(.+)/);
     if (m) {
       names[m[1]] = m[2].replace(/\s*\(INSERTED\)\s*/, '').trim();
     }
@@ -167,13 +167,36 @@ function parsePlanFrontmatter(content) {
 }
 
 /**
- * Parse a GSD phase directory name like '01-foundation' or '04.5-gsd-dashboard'.
+ * Compare two phase number strings using string-segmented comparison.
+ * Correctly handles depth-2 numbers like '4.5.1', '4.5.2', etc.
+ *
+ * @param {string|number} a
+ * @param {string|number} b
+ * @returns {number} negative if a < b, 0 if equal, positive if a > b
+ */
+function comparePhaseNums(a, b) {
+  const partsA = String(a).split('.').map(Number);
+  const partsB = String(b).split('.').map(Number);
+  const len = Math.max(partsA.length, partsB.length);
+  for (let i = 0; i < len; i++) {
+    const diff = (partsA[i] || 0) - (partsB[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+/**
+ * Parse a GSD phase directory name like '01-foundation' or '04.5-gsd-dashboard'
+ * or depth-2 names like '04.5.1-dashboard-ux-polish'.
+ *
+ * Note: numStr is the canonical phase identity; num (parseFloat) is kept for
+ * backward compatibility but loses precision for depth-2 numbers.
  *
  * @param {string} dirName
  * @returns {{ num: number, numStr: string, slug: string, dir: string }|null}
  */
 function parsePhaseDir(dirName) {
-  const m = dirName.match(/^(\d+(?:\.\d+)?)-(.+)$/);
+  const m = dirName.match(/^(\d+(?:\.\d+)*)-(.+)$/);
   if (!m) return null;
   return {
     num: parseFloat(m[1]),
@@ -376,8 +399,8 @@ async function buildPhaseList(sourcePath) {
   );
   const phases = phaseResults.filter(Boolean);
 
-  // Sort by numeric phase number (handles 04.5 correctly)
-  phases.sort((a, b) => a.num - b.num);
+  // Sort by string-segmented comparison to preserve depth-2 order (4.5.1, 4.5.2)
+  phases.sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
   return phases;
 }
 
@@ -414,7 +437,7 @@ async function buildPhaseListFromReader(reader) {
     })
   );
   const phases = phaseResults.filter(Boolean);
-  phases.sort((a, b) => a.num - b.num);
+  phases.sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
   return phases;
 }
 
@@ -1081,4 +1104,4 @@ async function start(port, sources, options = {}) {
   return fastify;
 }
 
-module.exports = { start, createServer, parseStateMd, parsePhaseDir, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };
+module.exports = { start, createServer, parseStateMd, parsePhaseDir, comparePhaseNums, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parseRoadmapPhaseNames, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };

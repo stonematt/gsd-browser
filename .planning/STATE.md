@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Phase 4.5.2 context gathered
-last_updated: "2026-03-27T15:03:14.788Z"
+stopped_at: Completed 04.5.2-01-PLAN.md
+last_updated: "2026-03-28T04:44:41.390Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
   completed_phases: 6
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 17
+  completed_plans: 16
   percent: 43
 ---
 
@@ -64,6 +64,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5.1-dashboard-ux-polish P01 | 1min | 1 tasks | 2 files |
 | Phase 04.5.1-dashboard-ux-polish P02 | 15min | 2 tasks | 1 files |
 | Phase 04.5.1-dashboard-ux-polish P02 | 20min | 3 tasks | 2 files |
+| Phase 04.5.2-theme-token-system P01 | 10min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -117,6 +118,10 @@ Recent decisions affecting current work:
 - [Phase 04.5.1-02]: parseRoadmapPhaseNames() added to server.js; phaseNames map passed in detail API response for name-labeled timeline
 - [Phase 04.5.1-02]: Card mini-timeline dedup uses parseFloat() for numStr comparison to handle zero-padded phase numbers
 - [Phase 04.5.1-02]: In-progress phase gets blue label + glow ring — matches active selection visual language
+- [Phase 04.5.2-theme-token-system]: Catppuccin Mocha as :root (dark default), Latte as prefers-color-scheme light override — auto-switching, no JS needed
+- [Phase 04.5.2-theme-token-system]: Named rgba tokens (--focus-ring, --hover-faint, etc.) rather than color-mix() for semi-transparent variants
+- [Phase 04.5.2-theme-token-system]: markdown.css .pl-* syntax highlight classes left hardcoded — Shiki fallback path only, out of scope
+- [Phase 04.5.2-theme-token-system]: color-scheme changed from dark to dark light in markdown.css to fix task list checkboxes in light mode
 
 ### Roadmap Evolution
 
@@ -133,6 +138,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T15:03:14.785Z
-Stopped at: Phase 4.5.2 context gathered
-Resume file: .planning/phases/04.5.2-theme-token-system/04.5.2-CONTEXT.md
+Last session: 2026-03-28T04:44:41.388Z
+Stopped at: Completed 04.5.2-01-PLAN.md
+Resume file: None

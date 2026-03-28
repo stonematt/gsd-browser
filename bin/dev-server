@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# Dev server lifecycle manager for gsd-browser.
+# Usage: bin/dev-server {start|stop|restart|status}
+#
+# Manages gsd-browser on port 4242 with PID tracking.
+# PID file: .dev-server.pid (gitignored)
+set -uo pipefail
+
+PORT=4242
+PIDFILE=".dev-server.pid"
+LOGFILE=".dev-server.log"
+
+pid_alive() {
+  [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null
+}
+
+port_pid() {
+  lsof -ti:"$PORT" -sTCP:LISTEN 2>/dev/null | head -1
+}
+
+health_check() {
+  curl -sf -o /dev/null -w '%{http_code}' "http://localhost:$PORT/api/dashboard" 2>/dev/null || echo "000"
+}
+
+do_status() {
+  if pid_alive; then
+    local pid=$(cat "$PIDFILE")
+    local http=$(health_check)
+    echo "● running  pid=$pid  port=$PORT  http=$http"
+    if [[ "$http" == "200" ]]; then
+      echo "  healthy — http://localhost:$PORT"
+    elif [[ "$http" == "000" ]]; then
+      echo "  starting up (not responding yet)"
+    else
+      echo "  responding with $http"
+    fi
+  else
+    local orphan=$(port_pid)
+    if [[ -n "$orphan" ]]; then
+      echo "○ stopped  (orphan pid=$orphan on port $PORT)"
+    else
+      echo "○ stopped"
+    fi
+    [[ -f "$PIDFILE" ]] && rm -f "$PIDFILE"
+  fi
+}
+
+do_start() {
+  if pid_alive; then
+    echo "Already running (pid=$(cat "$PIDFILE"))"
+    do_status
+    return 0
+  fi
+
+  # Kill orphan on our port
+  local orphan=$(port_pid)
+  if [[ -n "$orphan" ]]; then
+    echo "Killing orphan process $orphan on port $PORT"
+    kill "$orphan" 2>/dev/null || true
+    sleep 1
+  fi
+
+  echo "Starting gsd-browser on port $PORT..."
+  > "$LOGFILE"
+  nohup node bin/gsd-browser.cjs > "$LOGFILE" 2>&1 &
+  local pid=$!
+  echo "$pid" > "$PIDFILE"
+  echo "Started (pid=$pid), log: $LOGFILE"
+
+  # Wait for ready
+  local tries=0
+  while (( tries < 15 )); do
+    sleep 1
+    local http=$(health_check)
+    if [[ "$http" != "000" ]]; then
+      local actual=$(port_pid)
+      [[ -n "$actual" ]] && echo "$actual" > "$PIDFILE"
+      echo "● ready — http://localhost:$PORT"
+      return 0
+    fi
+    (( tries++ ))
+  done
+  echo "⚠ Started but not ready after 15s — check $LOGFILE"
+}
+
+do_stop() {
+  if pid_alive; then
+    local pid=$(cat "$PIDFILE")
+    echo "Stopping gsd-browser (pid=$pid)..."
+    kill "$pid" 2>/dev/null || true
+    local tries=0
+    while (( tries < 10 )) && kill -0 "$pid" 2>/dev/null; do
+      sleep 0.5
+      (( tries++ ))
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "Force killing..."
+      kill -9 "$pid" 2>/dev/null || true
+    fi
+    local orphan=$(port_pid)
+    [[ -n "$orphan" ]] && kill "$orphan" 2>/dev/null || true
+    rm -f "$PIDFILE"
+    echo "Stopped"
+  else
+    local orphan=$(port_pid)
+    if [[ -n "$orphan" ]]; then
+      echo "No tracked server, killing orphan $orphan on port $PORT"
+      kill "$orphan" 2>/dev/null || true
+      rm -f "$PIDFILE"
+      echo "Stopped"
+    else
+      echo "Not running"
+      rm -f "$PIDFILE"
+    fi
+  fi
+}
+
+do_restart() {
+  do_stop
+  sleep 1
+  do_start
+}
+
+case "${1:-status}" in
+  start)   do_start ;;
+  stop)    do_stop ;;
+  restart) do_restart ;;
+  status)  do_status ;;
+  *)
+    echo "Usage: bin/dev-server {start|stop|restart|status}"
+    exit 1
+    ;;
+esac

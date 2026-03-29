@@ -658,6 +658,32 @@
       flex-shrink: 0;
     }
 
+    #project-quick-links {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+      margin-right: 12px;
+    }
+
+    .project-quick-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 12px;
+      padding: 2px 8px;
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      white-space: nowrap;
+      cursor: pointer;
+      background: none;
+      font-family: var(--font-mono, 'Geist Mono', monospace);
+    }
+
+    .project-quick-link:hover {
+      color: var(--text-link);
+      border-color: var(--text-link);
+      background: var(--hover-faint);
+    }
+
     #back-to-dashboard {
       color: var(--text-link);
       text-decoration: none;
@@ -1148,10 +1174,11 @@
 
     <!-- Project view -->
     <div id="view-project" class="view">
-      <!-- Header: back link, project title, branch selector -->
+      <!-- Header: back link, project title, quick links, branch selector -->
       <div id="project-header">
         <a href="#/" id="back-to-dashboard">&larr; Dashboard</a>
         <h2 id="project-title"></h2>
+        <div id="project-quick-links"></div>
         <div id="branch-bar" hidden>
           <label for="branch-select">Branch:</label>
           <select id="branch-select" aria-label="Select branch"></select>
@@ -2043,6 +2070,31 @@
         // Set title
         document.getElementById('project-title').textContent = data.source ? data.source.name : sourceName;
 
+        // Render project-level quick links
+        const quickLinksEl = document.getElementById('project-quick-links');
+        quickLinksEl.innerHTML = '';
+        const quickLinks = (data.quickLinks || []).filter(l => l.exists);
+        for (const link of quickLinks) {
+          const btn = document.createElement('button');
+          btn.className = 'project-quick-link';
+          btn.textContent = link.name;
+          btn.title = link.path;
+          btn.addEventListener('click', () => {
+            const contentEl = document.getElementById('phase-content');
+            contentEl.innerHTML = '<p class="phase-content-loading">Loading...</p>';
+            // Deselect phase file list items
+            document.querySelectorAll('#phase-file-list .phase-file-item').forEach(el => el.classList.remove('active'));
+            const srcPath = data.source ? data.source.path : '';
+            const renderUrl = '/render?path=' + encodeURIComponent(srcPath + '/' + link.path) + '&fragment=true';
+            fetch(renderUrl).then(r => r.text()).then(html => {
+              contentEl.innerHTML = html;
+            }).catch(err => {
+              contentEl.innerHTML = '<p class="phase-content-error">Error: ' + escapeHtml(err.message) + '</p>';
+            });
+          });
+          quickLinksEl.appendChild(btn);
+        }
+
         // Branch selector
         const branches = data.branches || [];
         const branchBar = document.getElementById('branch-bar');
@@ -2318,21 +2370,23 @@
     }
 
     function groupPhaseFiles(files) {
+      // Support files (context, research, validation, etc.) above divider
+      // Plans and summaries below divider
       const planNums = [...new Set(
         files.filter(f => f.includes('-PLAN.md'))
              .map(f => f.match(/^([\d.]+-\d+)-PLAN\.md$/)?.[1])
              .filter(Boolean)
       )].sort();
-      const above = [];
+      const planGroup = [];
       for (const num of planNums) {
         const plan = files.find(f => f.startsWith(num + '-PLAN'));
         const summary = files.find(f => f.startsWith(num + '-SUMMARY'));
-        if (plan) above.push(plan);
-        if (summary) above.push(summary);
+        if (plan) planGroup.push(plan);
+        if (summary) planGroup.push(summary);
       }
-      const aboveSet = new Set(above);
-      const below = files.filter(f => f.endsWith('.md') && !aboveSet.has(f));
-      return { above, below };
+      const planSet = new Set(planGroup);
+      const supportFiles = files.filter(f => f.endsWith('.md') && !planSet.has(f));
+      return { above: supportFiles, below: planGroup };
     }
 
     function classifyPhaseFile(fileName) {

@@ -934,6 +934,9 @@ function createServer(sources) {
     // Get branches on-demand (per CONTEXT.md decision — only in detail, not dashboard)
     const branches = await getBranchesWithPlanning(source.path);
 
+    // Build quick links for project-level artifacts
+    const quickLinks = useBranch ? [] : await buildQuickLinks(source.path);
+
     return reply.send({
       source: { name: source.name, path: source.path },
       state,
@@ -943,6 +946,7 @@ function createServer(sources) {
       phaseGoals,
       branch: branch || null,
       branches,
+      quickLinks,
     });
   });
 

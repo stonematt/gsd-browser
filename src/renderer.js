@@ -14,6 +14,7 @@ let md = null;
 let mermaidModule = null;
 let mermaidAvailable = false;
 let diagramCounter = 0;
+let headingsBuffer = [];
 
 const SUPPORTED_LANGS = [
   'javascript', 'typescript', 'python', 'bash', 'shell', 'json', 'yaml',
@@ -69,6 +70,7 @@ async function initRenderer() {
   const MarkdownIt = require('markdown-it');
   const taskLists = require('markdown-it-task-lists');
   const footnote = require('markdown-it-footnote');
+  const anchor = require('markdown-it-anchor');
 
   md = new MarkdownIt({
     html: false,       // security — no raw HTML passthrough
@@ -88,6 +90,17 @@ async function initRenderer() {
 
   md.use(taskLists, { enabled: true });
   md.use(footnote);
+  md.use(anchor, {
+    level: [2, 3, 4],
+    permalink: anchor.permalink.ariaHidden({ placement: 'before' }),
+    callback: (token, info) => {
+      headingsBuffer.push({
+        level: parseInt(token.tag.slice(1)),
+        slug: info.slug,
+        title: info.title,
+      });
+    },
+  });
 }
 
 /**
@@ -116,6 +129,24 @@ function escapeHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+/**
+ * buildTocHtml(headings) — builds a collapsible TOC details element.
+ * Returns empty string if fewer than 2 headings.
+ * @param {Array<{level: number, slug: string, title: string}>} headings
+ */
+function buildTocHtml(headings) {
+  if (headings.length < 2) return '';
+
+  const minLevel = Math.min(...headings.map(h => h.level));
+  const items = headings.map(h => {
+    const indent = (h.level - minLevel) * 16;
+    const style = indent > 0 ? ` style="padding-left:${indent}px"` : '';
+    return `<li${style}><a href="#${h.slug}">${escapeHtml(h.title)}</a></li>`;
+  }).join('');
+
+  return `<details class="doc-toc"><summary>Table of Contents</summary><nav><ul>${items}</ul></nav></details>`;
 }
 
 /**
@@ -174,8 +205,12 @@ async function renderMarkdown(source) {
     return defaultFence(tokens, idx, options, env, self);
   };
 
+  // Clear buffer AFTER all awaits and BEFORE md.render() to prevent concurrency interleave
+  headingsBuffer.length = 0;
   const bodyHtml = md.render(source);
-  return `<div class="markdown-body">${bodyHtml}</div>`;
+  const headings = [...headingsBuffer];
+  const tocHtml = buildTocHtml(headings);
+  return tocHtml + `<div class="markdown-body">${bodyHtml}</div>`;
 }
 
 /**

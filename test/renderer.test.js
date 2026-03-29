@@ -90,6 +90,99 @@ describe('REND-01: Mermaid rendering', () => {
   });
 });
 
+describe('NAV-05: Heading anchors', () => {
+  test('NAV-05-1: h2 gets id attribute slugified from text', async () => {
+    const md = '## Hello World\n\nsome content\n';
+    const html = await renderMarkdown(md);
+    assert.ok(
+      html.includes('id="hello-world"'),
+      `Expected id="hello-world" on h2, got: ${html.slice(0, 400)}`
+    );
+  });
+
+  test('NAV-05-2: h3 and h4 also get id attributes', async () => {
+    const md = '### Sub Section\n\n#### Deep Section\n';
+    const html = await renderMarkdown(md);
+    assert.ok(
+      html.includes('id="sub-section"'),
+      `Expected id="sub-section" on h3, got: ${html.slice(0, 400)}`
+    );
+    assert.ok(
+      html.includes('id="deep-section"'),
+      `Expected id="deep-section" on h4, got: ${html.slice(0, 400)}`
+    );
+  });
+
+  test('NAV-05-3: duplicate headings get unique IDs with numeric suffix', async () => {
+    const md = '## Foo\n\n## Foo\n';
+    const html = await renderMarkdown(md);
+    assert.ok(html.includes('id="foo"'), `Expected id="foo" for first heading, got: ${html.slice(0, 400)}`);
+    assert.ok(html.includes('id="foo-1"'), `Expected id="foo-1" for second heading, got: ${html.slice(0, 400)}`);
+  });
+
+  test('NAV-05-4: each heading has a permalink anchor with class header-anchor', async () => {
+    const md = '## My Section\n';
+    const html = await renderMarkdown(md);
+    assert.ok(
+      html.includes('header-anchor'),
+      `Expected .header-anchor element on heading, got: ${html.slice(0, 400)}`
+    );
+  });
+});
+
+describe('NAV-06: Inline TOC', () => {
+  test('NAV-06-1: doc with 3 h2 headings includes details.doc-toc before markdown-body', async () => {
+    const md = '## Alpha\n\n## Beta\n\n## Gamma\n';
+    const html = await renderMarkdown(md);
+    assert.ok(
+      html.includes('doc-toc'),
+      `Expected doc-toc element, got: ${html.slice(0, 400)}`
+    );
+    const tocIdx = html.indexOf('doc-toc');
+    const bodyIdx = html.indexOf('markdown-body');
+    assert.ok(tocIdx < bodyIdx, `Expected doc-toc to appear before markdown-body, tocIdx=${tocIdx} bodyIdx=${bodyIdx}`);
+  });
+
+  test('NAV-06-2: TOC links reference correct heading slugs', async () => {
+    const md = '## Hello World\n\n## Second Heading\n\n## Third One\n';
+    const html = await renderMarkdown(md);
+    assert.ok(html.includes('href="#hello-world"'), `Expected href="#hello-world" in TOC, got: ${html.slice(0, 600)}`);
+    assert.ok(html.includes('href="#second-heading"'), `Expected href="#second-heading" in TOC`);
+    assert.ok(html.includes('href="#third-one"'), `Expected href="#third-one" in TOC`);
+  });
+
+  test('NAV-06-3: doc with 0 headings has no doc-toc', async () => {
+    const md = 'Just a paragraph with no headings.\n';
+    const html = await renderMarkdown(md);
+    assert.ok(!html.includes('doc-toc'), `Expected no doc-toc for headingless doc, got: ${html.slice(0, 400)}`);
+  });
+
+  test('NAV-06-3b: doc with exactly 1 heading has no doc-toc', async () => {
+    const md = '## Only Heading\n\nsome content\n';
+    const html = await renderMarkdown(md);
+    assert.ok(!html.includes('doc-toc'), `Expected no doc-toc for single-heading doc, got: ${html.slice(0, 400)}`);
+  });
+
+  test('NAV-06-4: h3 items in TOC have indentation style', async () => {
+    const md = '## Top\n\n### Sub\n\n## Another Top\n';
+    const html = await renderMarkdown(md);
+    assert.ok(html.includes('doc-toc'), `Expected doc-toc, got: ${html.slice(0, 400)}`);
+    assert.ok(
+      html.includes('padding-left'),
+      `Expected padding-left on h3 TOC items, got: ${html.slice(0, 600)}`
+    );
+  });
+
+  test('NAV-06-5: consecutive renders do not bleed headings', async () => {
+    const docA = '## Doc A Heading One\n\n## Doc A Heading Two\n\n## Doc A Heading Three\n';
+    const docB = '## Only B Heading\n';
+    await renderMarkdown(docA);
+    const htmlB = await renderMarkdown(docB);
+    assert.ok(!htmlB.includes('doc-toc'), `Expected no doc-toc in doc B (1 heading), got: ${htmlB.slice(0, 600)}`);
+    assert.ok(!htmlB.includes('doc-a'), `Expected no doc-A headings in doc-B output, got: ${htmlB.slice(0, 600)}`);
+  });
+});
+
 describe('REND-02: Page structure', () => {
   test('renderMarkdown wraps output in .markdown-body', async () => {
     const md = '# Hello\n\nWorld\n';

@@ -63,6 +63,8 @@ Open `http://localhost:3000` (or your custom port) in a browser.
 
 ## What you'll see
 
+![GSD Browser Dashboard](docs/images/dashboard.png)
+
 **Dashboard** — project cards showing milestone progress, current focus, phase dot strips, and quick-links to key planning documents.
 
 **Project detail** — phase timeline with completed/active/pending phases, file sidebar with plan/summary/research classification, and a content pane rendering the selected document with structured metadata cards for plan files.

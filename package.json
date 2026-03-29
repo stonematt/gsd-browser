@@ -1,18 +1,40 @@
 {
   "name": "gsd-browser",
-  "version": "0.0.1",
+  "version": "0.9.0",
   "description": "Browse markdown artifacts that AI agents write, fresh from disk",
   "main": "src/server.js",
   "bin": {
     "gsd-browser": "bin/gsd-browser.cjs"
   },
+  "files": [
+    "src/",
+    "bin/gsd-browser.cjs",
+    "public/",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },
   "scripts": {
     "test": "node --test test/"
   },
+  "author": "Matt Stone",
   "license": "MIT",
+  "keywords": [
+    "markdown",
+    "gsd",
+    "ai-agents",
+    "browser",
+    "planning",
+    "developer-tools",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stonematt/gsd-browser"
+  },
+  "homepage": "https://github.com/stonematt/gsd-browser#readme",
   "dependencies": {
     "@fastify/static": "^9.0.0",
     "fastify": "^5.8.2",
@@ -24,6 +46,7 @@
     "mermaid": "^11.13.0",
     "mime-types": "^3.0.2",
     "minimist": "^1.2.8",
+    "open": "^11.0.0",
     "shiki": "^4.0.2",
     "svgdom": "^0.1.23"
   }

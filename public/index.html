@@ -828,7 +828,7 @@
       font-weight: 600;
     }
     .phase-file-item--plan::before {
-      content: '\25B6 ';
+      content: '\25B8 ';
       color: var(--text-link);
     }
     .phase-file-item--research::before {
@@ -845,7 +845,7 @@
       color: var(--text-muted);
     }
     .phase-file-item--validation::before {
-      content: '\25C9 ';
+      content: '\25CE ';
       color: var(--text-muted);
     }
 
@@ -969,6 +969,103 @@
     .req-chip--dash {
       color: var(--text-link);
       border-color: var(--active-ring);
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Phase navigator (vertical, detail view col 1)                       */
+    /* ------------------------------------------------------------------ */
+
+    .nav-phase-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      cursor: pointer;
+      border-left: 2px solid transparent;
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .nav-phase-row:hover {
+      background: var(--hover-faint);
+    }
+    .nav-phase-row--selected {
+      border-left-color: var(--text-link);
+      background: var(--active-bg);
+      color: var(--text-bright);
+    }
+    .nav-phase-row--complete { color: var(--text-muted); }
+    .nav-phase-row--active { color: var(--text-bright); }
+    .nav-phase-row--pending { color: var(--text-secondary); }
+
+    .nav-phase-dot {
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: inline-block;
+    }
+    .nav-phase-dot--complete { background: var(--status-complete); }
+    .nav-phase-dot--active { background: var(--status-active); }
+    .nav-phase-dot--pending { background: var(--status-pending); }
+
+    .nav-connector {
+      width: 2px;
+      height: 5px;
+      margin-left: 15px;
+    }
+    .nav-connector--complete { background: var(--status-complete); }
+    .nav-connector--pending { background: var(--status-pending); }
+
+    .completed-section-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+    .completed-section-header:hover { background: var(--hover-faint); }
+    .completed-section-header .chevron {
+      transition: transform 150ms ease;
+      font-size: 10px;
+    }
+    .completed-section-header.expanded .chevron {
+      transform: rotate(90deg);
+    }
+    .completed-section-list {
+      display: none;
+    }
+    .completed-section-list.expanded {
+      display: block;
+    }
+    .completed-mini-dots {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: auto;
+    }
+    .completed-mini-dot {
+      border-radius: 50%;
+      background: var(--status-complete);
+    }
+    .nav-section-divider {
+      height: 1px;
+      background: var(--border-default);
+      margin: 6px 10px;
+    }
+
+    .nav-plan-count {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .phase-file-divider {
+      height: 1px;
+      background: var(--border-default);
+      margin: 6px 12px;
     }
 
     /* Browse view context bar — shows project info when navigating from dashboard */
@@ -1964,20 +2061,23 @@
           branchBar.hidden = true;
         }
 
-        // Render timeline — merge in pending phases from roadmap
+        // Render navigator — merge in pending phases from roadmap
         const phases = data.phases || [];
         const deps = data.dependencies || {};
         const pNames = data.phaseNames || {};
         const existingNums = new Set(phases.map(p => String(p.displayNum || p.numStr)));
         const pendingPhases = Object.keys(deps)
           .filter(num => !existingNums.has(String(num)))
-          .map(num => ({ numStr: num, displayNum: num, status: 'pending', slug: pNames[num] || '', files: [], planDetails: [] }));
+          .map(num => ({ numStr: num, displayNum: num, status: 'pending', slug: pNames[num] || '', files: [], planDetails: [], planCount: 0 }));
         const allTimelinePhases = [...phases, ...pendingPhases]
           .sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
         // Store sourcePath on #detail-body for use by selectPhase click handlers
         const detailBody = document.getElementById('detail-body');
-        if (detailBody) detailBody.dataset.sourcePath = data.source ? data.source.path : '';
-        renderTimeline(allTimelinePhases);
+        const sourcePath = data.source ? data.source.path : '';
+        if (detailBody) detailBody.dataset.sourcePath = sourcePath;
+
+        renderPhaseNavigator(allTimelinePhases, sourcePath, data.phaseNames || {}, data.phaseGoals || {}, {});
+        applyNavCollapseState();
 
         // Auto-select phase: first in-progress, then last complete, then first
         let autoPhase = phases.find(p => p.status === 'in-progress');
@@ -1990,17 +2090,249 @@
         }
 
         if (autoPhase) {
-          selectPhase(autoPhase, data.source ? data.source.path : null);
+          // Highlight the auto-selected phase in navigator
+          const nav = document.getElementById('phase-navigator');
+          if (nav) {
+            const row = nav.querySelector('[data-phase-num="' + CSS.escape(String(autoPhase.numStr)) + '"]');
+            if (row) {
+              row.classList.add('nav-phase-row--selected');
+              // If it's in the completed section (hidden by default), expand it
+              const list = row.closest('.completed-section-list');
+              if (list) {
+                list.classList.add('expanded');
+                const header = list.previousElementSibling;
+                if (header && header.classList.contains('completed-section-header')) {
+                  header.classList.add('expanded');
+                }
+              }
+            }
+          }
+          selectPhase(autoPhase, sourcePath);
         } else {
           document.getElementById('phase-file-list').innerHTML = '<button class="nav-col-toggle" id="nav-col-toggle" title="Toggle phase navigator">&#9664;</button>';
           document.getElementById('phase-content').innerHTML =
             '<p class="phase-content-loading">No phases found.</p>';
+          applyNavCollapseState();
+          wireNavColToggle();
         }
       } catch (err) {
         document.getElementById('phase-navigator').innerHTML =
           '<span class="phase-content-error">Error loading project: ' + escapeHtml(err.message) + '</span>';
         document.getElementById('phase-content').innerHTML = '';
       }
+    }
+
+    // ----------------------------------------------------------------
+    // Phase navigator helpers
+    // ----------------------------------------------------------------
+
+    function dotSizePx(planCount, isSubPhase) {
+      let size;
+      if (planCount === 0) size = 12;
+      else if (planCount <= 2) size = 14;
+      else if (planCount <= 4) size = 16;
+      else size = 20;
+      if (isSubPhase) size = Math.max(8, size - 4);
+      return size;
+    }
+
+    // Client-side normalizePhaseNum: strips leading zeros per segment
+    // e.g. "04.5.4" -> "4.5.4", "01" -> "1"
+    function normalizePhaseNumClient(numStr) {
+      return String(numStr).split('.').map(s => String(parseInt(s, 10))).join('.');
+    }
+
+    function applyNavCollapseState() {
+      const detailBody = document.getElementById('detail-body');
+      const toggle = document.getElementById('nav-col-toggle');
+      if (!detailBody || !toggle) return;
+      const collapsed = localStorage.getItem('phaseNavCollapsed') === 'true';
+      if (collapsed) {
+        detailBody.classList.add('nav-collapsed');
+        toggle.innerHTML = '&#9654;';
+      } else {
+        detailBody.classList.remove('nav-collapsed');
+        toggle.innerHTML = '&#9664;';
+      }
+    }
+
+    function wireNavColToggle() {
+      const toggle = document.getElementById('nav-col-toggle');
+      if (!toggle) return;
+      toggle.addEventListener('click', () => {
+        const detailBody = document.getElementById('detail-body');
+        if (!detailBody) return;
+        const nowCollapsed = detailBody.classList.toggle('nav-collapsed');
+        localStorage.setItem('phaseNavCollapsed', String(nowCollapsed));
+        toggle.innerHTML = nowCollapsed ? '&#9654;' : '&#9664;';
+      });
+    }
+
+    function renderPhaseNavigator(phases, sourcePath, phaseNames, phaseGoals, planDetails) {
+      const nav = document.getElementById('phase-navigator');
+      if (!nav) return;
+      nav.innerHTML = '';
+
+      const { history, frontier } = splitHistoryFrontier(phases);
+
+      // Build phase row element (used for both completed section and frontier)
+      function buildPhaseRow(phase, depth, isFirst) {
+        const frag = document.createDocumentFragment();
+        const isSubPhase = depth > 0;
+        const statusCls = phase.status === 'complete'
+          ? 'complete'
+          : phase.status === 'in-progress'
+            ? 'active'
+            : 'pending';
+
+        // Connector bar (skip for very first row in navigator)
+        if (!isFirst) {
+          const conn = document.createElement('div');
+          conn.className = 'nav-connector nav-connector--' + (phase.status === 'complete' ? 'complete' : 'pending');
+          conn.style.marginLeft = (15 + depth * 12) + 'px';
+          frag.appendChild(conn);
+        }
+
+        const row = document.createElement('div');
+        row.className = 'nav-phase-row nav-phase-row--' + statusCls;
+        row.style.paddingLeft = (10 + depth * 22) + 'px';
+        row.dataset.phaseNum = String(phase.numStr);
+
+        // Dot
+        const dotSize = dotSizePx(phase.planCount || 0, isSubPhase);
+        const dot = document.createElement('span');
+        dot.className = 'nav-phase-dot nav-phase-dot--' + statusCls;
+        dot.style.width = dotSize + 'px';
+        dot.style.height = dotSize + 'px';
+        row.appendChild(dot);
+
+        // Label: muted phase number + primary name
+        const disp = phase.displayNum || normalizePhaseNumClient(phase.numStr);
+        const phaseName = phaseNames[disp] || phase.slug || '';
+        const label = document.createElement('span');
+        label.className = 'nav-phase-label';
+        const numSpan = document.createElement('span');
+        numSpan.style.color = 'var(--text-muted)';
+        numSpan.textContent = disp;
+        label.appendChild(numSpan);
+        if (phaseName) {
+          label.appendChild(document.createTextNode(' ' + phaseName));
+        }
+        row.appendChild(label);
+
+        // Plan count badge
+        if (phase.planCount > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'nav-plan-count';
+          badge.textContent = phase.planCount + 'p';
+          row.appendChild(badge);
+        }
+
+        // Click handler
+        row.addEventListener('click', () => {
+          // Remove selected from all rows
+          nav.querySelectorAll('.nav-phase-row').forEach(r => r.classList.remove('nav-phase-row--selected'));
+          row.classList.add('nav-phase-row--selected');
+          selectPhase(phase, sourcePath);
+        });
+
+        frag.appendChild(row);
+        return frag;
+      }
+
+      // Recursive flat rendering of a phase and its children
+      function renderPhaseAndChildren(phase, depth, isFirst) {
+        const frag = document.createDocumentFragment();
+        frag.appendChild(buildPhaseRow(phase, depth, isFirst));
+        if (phase.children && phase.children.length > 0) {
+          for (const child of phase.children) {
+            frag.appendChild(renderPhaseAndChildren(child, depth + 1, false));
+          }
+        }
+        return frag;
+      }
+
+      // Build phase rows for a list of phases (already tree-structured from buildPhaseTree)
+      function renderFlatTree(phases, container) {
+        const tree = buildPhaseTree(phases);
+        let first = true;
+        for (const root of tree) {
+          container.appendChild(renderPhaseAndChildren(root, 0, first));
+          first = false;
+        }
+      }
+
+      // Completed section
+      if (history.length > 0) {
+        const header = document.createElement('div');
+        header.className = 'completed-section-header';
+
+        const chevron = document.createElement('span');
+        chevron.className = 'chevron';
+        chevron.textContent = '\u25B6';
+        header.appendChild(chevron);
+
+        const label = document.createElement('span');
+        label.textContent = history.length + ' phase' + (history.length === 1 ? '' : 's') + ' complete';
+        header.appendChild(label);
+
+        // Mini dot strip
+        const miniDots = document.createElement('span');
+        miniDots.className = 'completed-mini-dots';
+        for (const phase of history) {
+          const d = document.createElement('span');
+          d.className = 'completed-mini-dot';
+          const depth = getPhaseDepth(phase.numStr);
+          const sz = depth > 0 ? 4 : 6;
+          d.style.width = sz + 'px';
+          d.style.height = sz + 'px';
+          miniDots.appendChild(d);
+        }
+        header.appendChild(miniDots);
+
+        const list = document.createElement('div');
+        list.className = 'completed-section-list';
+
+        renderFlatTree(history, list);
+
+        header.addEventListener('click', () => {
+          header.classList.toggle('expanded');
+          list.classList.toggle('expanded');
+        });
+
+        nav.appendChild(header);
+        nav.appendChild(list);
+      }
+
+      // Divider (only if both sections have content)
+      if (history.length > 0 && frontier.length > 0) {
+        const divider = document.createElement('div');
+        divider.className = 'nav-section-divider';
+        nav.appendChild(divider);
+      }
+
+      // Frontier section
+      if (frontier.length > 0) {
+        renderFlatTree(frontier, nav);
+      }
+    }
+
+    function groupPhaseFiles(files) {
+      const planNums = [...new Set(
+        files.filter(f => f.includes('-PLAN.md'))
+             .map(f => f.match(/^([\d.]+-\d+)-PLAN\.md$/)?.[1])
+             .filter(Boolean)
+      )].sort();
+      const above = [];
+      for (const num of planNums) {
+        const plan = files.find(f => f.startsWith(num + '-PLAN'));
+        const summary = files.find(f => f.startsWith(num + '-SUMMARY'));
+        if (plan) above.push(plan);
+        if (summary) above.push(summary);
+      }
+      const aboveSet = new Set(above);
+      const below = files.filter(f => f.endsWith('.md') && !aboveSet.has(f));
+      return { above, below };
     }
 
     function classifyPhaseFile(fileName) {
@@ -2193,26 +2525,26 @@
       if (!phaseObj) return;
       currentProjectPhase = phaseObj;
 
-      // Store sourcePath on #detail-body (preferred) or legacy #phase-timeline container
+      // Resolve sourcePath from parameter or #detail-body dataset
       const detailBody = document.getElementById('detail-body');
-      const container = document.getElementById('phase-timeline');
       const resolvedSourcePath = sourcePath
         || (detailBody && detailBody.dataset.sourcePath)
-        || (container && container.dataset.sourcePath)
         || '';
       if (detailBody) detailBody.dataset.sourcePath = resolvedSourcePath;
-      if (container) {
-        container.dataset.sourcePath = resolvedSourcePath;
-        // Update selected highlight on nodes (legacy horizontal timeline, no-op if #phase-timeline absent)
-        const allNodes = container.querySelectorAll('.phase-node');
-        allNodes.forEach(n => {
-          n.classList.toggle('phase-node--selected', n.dataset.phaseNum === String(phaseObj.numStr));
-        });
+
+      // Update selected highlight in vertical navigator
+      const nav = document.getElementById('phase-navigator');
+      if (nav) {
+        nav.querySelectorAll('.nav-phase-row').forEach(r => r.classList.remove('nav-phase-row--selected'));
+        const row = nav.querySelector('[data-phase-num="' + CSS.escape(String(phaseObj.numStr)) + '"]');
+        if (row) row.classList.add('nav-phase-row--selected');
       }
 
       // Build file list (only .md files)
       const fileListEl = document.getElementById('phase-file-list');
       fileListEl.innerHTML = '<button class="nav-col-toggle" id="nav-col-toggle" title="Toggle phase navigator">&#9664;</button>';
+      applyNavCollapseState();
+      wireNavColToggle();
 
       const mdFiles = (phaseObj.files || []).filter(f => f.endsWith('.md'));
       if (mdFiles.length === 0) {
@@ -2227,7 +2559,10 @@
       // Phase directory name is "numStr-slug" e.g. "04.5-gsd-dashboard"
       const phaseDir = phaseObj.numStr + (phaseObj.slug ? '-' + phaseObj.slug : '');
 
-      for (const fileName of mdFiles) {
+      // Group files: plans+summaries above divider, others below
+      const { above, below } = groupPhaseFiles(mdFiles);
+
+      function appendFileItem(fileName) {
         const item = document.createElement('button');
         const fileType = classifyPhaseFile(fileName);
         item.className = 'phase-file-item phase-file-item--' + fileType;
@@ -2236,20 +2571,36 @@
         item.dataset.fileName = fileName;
 
         item.addEventListener('click', () => {
-          // Highlight active
           fileListEl.querySelectorAll('.phase-file-item').forEach(el => el.classList.remove('active'));
           item.classList.add('active');
           loadPhaseFile(currentProjectName, phaseDir, fileName, resolvedSourcePath, phaseObj.planDetails);
         });
 
         fileListEl.appendChild(item);
+        return item;
+      }
+
+      for (const fileName of above) {
+        appendFileItem(fileName);
+      }
+
+      if (below.length > 0) {
+        if (above.length > 0) {
+          const divider = document.createElement('div');
+          divider.className = 'phase-file-divider';
+          fileListEl.appendChild(divider);
+        }
+        for (const fileName of below) {
+          appendFileItem(fileName);
+        }
       }
 
       // Auto-select first file
       const firstItem = fileListEl.querySelector('.phase-file-item');
       if (firstItem) {
         firstItem.classList.add('active');
-        loadPhaseFile(currentProjectName, phaseDir, mdFiles[0], resolvedSourcePath, phaseObj.planDetails);
+        const firstFileName = above.length > 0 ? above[0] : below[0];
+        loadPhaseFile(currentProjectName, phaseDir, firstFileName, resolvedSourcePath, phaseObj.planDetails);
       }
     }
 

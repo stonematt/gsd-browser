@@ -32,7 +32,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **NAV-01**: File tree sidebar shows directory structure of the active source
 - [x] **NAV-02**: File tree is collapsible/expandable for nested directories
 - [x] **NAV-03**: Repo switcher (dropdown) allows jumping between registered sources
-- [ ] **NAV-04**: Relative markdown links resolve correctly within a source
+- [x] **NAV-04**: Relative markdown links resolve correctly within a source
 - [x] **NAV-05**: Heading anchors are auto-generated and clickable
 - [x] **NAV-06**: Inline table of contents generated per document from headings
 
@@ -130,7 +130,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NAV-01 | Phase 4 | Complete |
 | NAV-02 | Phase 4 | Complete |
 | NAV-03 | Phase 4 | Complete |
-| NAV-04 | Phase 5 | Pending |
+| NAV-04 | Phase 5 | Complete |
 | NAV-05 | Phase 5 | Complete |
 | NAV-06 | Phase 5 | Complete |
 | REND-01 | Phase 2 | Complete |

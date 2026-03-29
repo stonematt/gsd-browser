@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 4.5.2: Theme Token System** - Extract hardcoded colors into CSS custom properties, add light theme via prefers-color-scheme media query (INSERTED)
 - [x] **Phase 4.5.3: Dashboard Tile Redesign** - Compressed history / expanded frontier dot strip, branching stems for sub-phases, dot sizing by plan count, depth-aware sub-phase parsing (INSERTED) (completed 2026-03-28)
 - [x] **Phase 4.5.4: Detail Page Layout** - Three-column layout with vertical phase navigator, collapsible completed section, col 1 collapse with localStorage persistence, frontmatter stripping from rendered output (INSERTED) (completed 2026-03-29)
-- [ ] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams
+- [x] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams (completed 2026-03-29)
 - [ ] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX
 
 ## Phase Details
@@ -184,7 +184,7 @@ Plans:
   1. Clicking a relative markdown link within a source navigates to the correct file
   2. Heading anchors are auto-generated and clicking them scrolls to the correct section; URLs can be copied and shared
   3. An inline table of contents appears per document, generated from the document's headings
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 05-01-PLAN.md — Server-side heading anchors + inline TOC (markdown-it-anchor, buildTocHtml, CSS styles)
@@ -216,5 +216,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.
 | 4.5.2. Theme Token System | 0/2 | Not started | - |
 | 4.5.3. Dashboard Tile Redesign | 2/2 | Complete   | 2026-03-28 |
 | 4.5.4. Detail Page Layout | 2/2 | Complete    | 2026-03-29 |
-| 5. Navigation Polish | 1/2 | In Progress|  |
+| 5. Navigation Polish | 2/2 | Complete   | 2026-03-29 |
 | 6. Distribution | 0/TBD | Not started | - |

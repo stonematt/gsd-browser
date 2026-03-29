@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-29T07:02:46.204Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-29T15:36:07.233Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 23
-  completed_plans: 22
+  completed_plans: 23
   percent: 43
 ---
 
@@ -71,6 +71,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5.4 P01 | 3min | 2 tasks | 3 files |
 | Phase 04.5.4-detail-page-layout P02 | 90min | 3 tasks | 1 files |
 | Phase 05-navigation-polish P01 | 2min | 2 tasks | 4 files |
+| Phase 05-navigation-polish P02 | 15min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,7 @@ Recent decisions affecting current work:
 - [Phase 05-navigation-polish]: headingsBuffer cleared after Mermaid awaits and before md.render() — prevents heading bleed between renders
 - [Phase 05-navigation-polish]: TOC element rendered outside markdown-body div — sibling layout avoids double max-width constraints
 - [Phase 05-navigation-polish]: buildTocHtml threshold is <2 headings: no TOC element injected for single-heading docs
+- [Phase 05-navigation-polish]: Intercept #fragment links in SPA — native browser scroll targets window.scrollY but content divs use overflow:auto; scrollIntoView on element scrolls the nearest scrollable ancestor correctly
 
 ### Roadmap Evolution
 
@@ -161,6 +163,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T07:02:40.794Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-29T15:36:07.230Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None

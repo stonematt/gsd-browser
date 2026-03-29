@@ -139,7 +139,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04.5.2-01-PLAN.md ��� Create theme.css token file (Catppuccin Mocha/Latte) + migrate sources.html, renderer.js, markdown.css
+- [ ] 04.5.2-01-PLAN.md — Create theme.css token file (Catppuccin Mocha/Latte) + migrate sources.html, renderer.js, markdown.css
 - [ ] 04.5.2-02-PLAN.md — Migrate index.html to token references + visual verification of both themes
 
 ### Phase 4.5.3: Dashboard Tile Redesign (INSERTED)
@@ -184,7 +184,11 @@ Plans:
   1. Clicking a relative markdown link within a source navigates to the correct file
   2. Heading anchors are auto-generated and clicking them scrolls to the correct section; URLs can be copied and shared
   3. An inline table of contents appears per document, generated from the document's headings
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Server-side heading anchors + inline TOC (markdown-it-anchor, buildTocHtml, CSS styles)
+- [ ] 05-02-PLAN.md — Client-side relative link interception + hash scroll in browse and detail views + visual verification
 
 ### Phase 6: Distribution
 **Goal**: Anyone can run gsd-browser with a single npx command and nothing pre-installed
@@ -212,5 +216,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.
 | 4.5.2. Theme Token System | 0/2 | Not started | - |
 | 4.5.3. Dashboard Tile Redesign | 2/2 | Complete   | 2026-03-28 |
 | 4.5.4. Detail Page Layout | 2/2 | Complete    | 2026-03-29 |
-| 5. Navigation Polish | 0/TBD | Not started | - |
+| 5. Navigation Polish | 0/2 | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

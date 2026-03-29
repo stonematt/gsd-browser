@@ -139,7 +139,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 04.5.2-01-PLAN.md — Create theme.css token file (Catppuccin Mocha/Latte) + migrate sources.html, renderer.js, markdown.css
+- [ ] 04.5.2-01-PLAN.md ��� Create theme.css token file (Catppuccin Mocha/Latte) + migrate sources.html, renderer.js, markdown.css
 - [ ] 04.5.2-02-PLAN.md — Migrate index.html to token references + visual verification of both themes
 
 ### Phase 4.5.3: Dashboard Tile Redesign (INSERTED)
@@ -170,7 +170,11 @@ Plans:
   3. The col 1 collapse toggle hides/shows the phase navigator with a CSS transition; collapse state persists in localStorage across page loads
   4. PLAN.md files render with a structured metadata card (wave, deps, requirements) and the raw YAML frontmatter is stripped from the rendered markdown body
   5. Sub-phases are indented by depth level in the vertical navigator (22px per level)
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 04.5.4-01-PLAN.md — Server-side frontmatter stripping + three-column grid HTML/CSS structure
+- [ ] 04.5.4-02-PLAN.md — Vertical phase navigator, completed collapse, col 1 toggle, file list regrouping + visual verification
 
 ### Phase 5: Navigation Polish
 **Goal**: Documents with internal links, heading anchors, and Mermaid diagrams navigate and render correctly
@@ -207,6 +211,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.
 | 4.5.1. Dashboard UX Polish | 3/3 | Complete   | 2026-03-25 |
 | 4.5.2. Theme Token System | 0/2 | Not started | - |
 | 4.5.3. Dashboard Tile Redesign | 2/2 | Complete   | 2026-03-28 |
-| 4.5.4. Detail Page Layout | 0/TBD | Not started | - |
+| 4.5.4. Detail Page Layout | 0/2 | Not started | - |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

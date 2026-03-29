@@ -19,6 +19,7 @@ const {
   listSources,
   discoverConventions,
   enrichSourcesWithConventions,
+  resolveShouldOpen,
 } = require('../src/sources.js');
 
 let testDir;
@@ -302,4 +303,45 @@ test('listSources: returns empty array when config has no sources', async () => 
   await saveConfig({ sources: [] }, cleanPath);
   const sources = await listSources(cleanPath);
   assert.deepEqual(sources, []);
+});
+
+// ============================================================
+// loadConfig normalization (Wave 0 — RED tests for Task 3)
+// ============================================================
+
+test('loadConfig normalizes missing sources array', async () => {
+  const p = path.join(testDir, 'normalize-no-sources.json');
+  await fs.writeFile(p, JSON.stringify({ open: false }), 'utf8');
+  const config = await loadConfig(p);
+  assert.ok(Array.isArray(config.sources), 'sources should be an array');
+  assert.deepEqual(config.sources, []);
+  assert.equal(config.open, false, 'open key should be preserved');
+});
+
+test('loadConfig preserves extra config keys alongside sources', async () => {
+  const p = path.join(testDir, 'extra-keys.json');
+  await fs.writeFile(p, JSON.stringify({ sources: [], open: true }), 'utf8');
+  const config = await loadConfig(p);
+  assert.ok(Array.isArray(config.sources));
+  assert.deepEqual(config.sources, []);
+  assert.equal(config.open, true);
+});
+
+// ============================================================
+// resolveShouldOpen precedence (Wave 0 — RED tests for Task 3)
+// ============================================================
+
+test('resolveShouldOpen: --no-open wins over config.open=true', () => {
+  const result = resolveShouldOpen(['--no-open'], true);
+  assert.equal(result, false);
+});
+
+test('resolveShouldOpen: config.open=false overrides default', () => {
+  const result = resolveShouldOpen([], false);
+  assert.equal(result, false);
+});
+
+test('resolveShouldOpen: default is true when no flags and no config', () => {
+  const result = resolveShouldOpen([], undefined);
+  assert.equal(result, true);
 });

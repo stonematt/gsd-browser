@@ -7,7 +7,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { execSync } = require('node:child_process');
 
-const { createServer, start, parseStateMd, parsePhaseDir, normalizePhaseNum, getPhaseInfo, isValidBranchName, parsePlanFrontmatter, buildPlanDetails, comparePhaseNums, parseRoadmapPhaseGoals } = require('../src/server.js');
+const { createServer, start, parseStateMd, parsePhaseDir, normalizePhaseNum, getPhaseInfo, isValidBranchName, parsePlanFrontmatter, buildPlanDetails, comparePhaseNums, parseRoadmapPhaseGoals, formatBanner } = require('../src/server.js');
 const { initRenderer } = require('../src/renderer.js');
 
 let testDir;
@@ -1571,5 +1571,35 @@ describe('DASH-19: /render frontmatter stripping', () => {
     assert.ok(!response.body.includes('plan: 02'), 'Windows frontmatter key should be stripped');
     assert.ok(response.body.includes('<h1>Windows</h1>'), 'body heading should be rendered');
     await fastify.close();
+  });
+});
+
+// ============================================================
+// startup banner (Wave 0 — RED tests for Task 3)
+// ============================================================
+
+describe('startup banner', () => {
+  test('banner includes version string', () => {
+    const version = require('../package.json').version;
+    const banner = formatBanner(version, 4242, []);
+    assert.ok(banner.includes(`gsd-browser v${version}`), 'should include version');
+    assert.ok(banner.includes('http://127.0.0.1:4242'), 'should include URL');
+  });
+
+  test('banner lists per-source conventions', () => {
+    const banner = formatBanner('1.0.0', 4242, [
+      { name: 'my-project', conventions: ['.planning', 'docs', 'README.md'], available: true }
+    ]);
+    assert.ok(banner.includes('my-project'), 'should include source name');
+    assert.ok(banner.includes('.planning/'), 'should include .planning/');
+    assert.ok(banner.includes('docs/'), 'should include docs/');
+    assert.ok(banner.includes('README.md'), 'should include README.md');
+  });
+
+  test('banner shows auto-registered tag', () => {
+    const banner = formatBanner('1.0.0', 4242, [
+      { name: 'test', conventions: ['.planning'], available: true, _autoRegistered: true }
+    ]);
+    assert.ok(banner.includes('(auto-registered)'), 'should include auto-registered tag');
   });
 });

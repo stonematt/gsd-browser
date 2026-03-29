@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-29T06:09:08.826Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-03-29T07:02:46.204Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
   completed_phases: 9
-  total_plans: 21
-  completed_plans: 21
+  total_plans: 23
+  completed_plans: 22
   percent: 43
 ---
 
@@ -70,6 +70,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5.3-dashboard-tile-redesign P02 | 90min | 2 tasks | 5 files |
 | Phase 04.5.4 P01 | 3min | 2 tasks | 3 files |
 | Phase 04.5.4-detail-page-layout P02 | 90min | 3 tasks | 1 files |
+| Phase 05-navigation-polish P01 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -141,6 +142,9 @@ Recent decisions affecting current work:
 - [Phase 04.5.4-detail-page-layout]: Flat sibling DOM for phase navigator rows — indentation via padding-left, not nested containers
 - [Phase 04.5.4-detail-page-layout]: splitHistoryFrontier() drives completed/frontier split; completed section collapsed by default with mini dot strip
 - [Phase 04.5.4-detail-page-layout]: applyNavCollapseState() called inside loadProjectDetail() so localStorage state restores on each project navigation
+- [Phase 05-navigation-polish]: headingsBuffer cleared after Mermaid awaits and before md.render() — prevents heading bleed between renders
+- [Phase 05-navigation-polish]: TOC element rendered outside markdown-body div — sibling layout avoids double max-width constraints
+- [Phase 05-navigation-polish]: buildTocHtml threshold is <2 headings: no TOC element injected for single-heading docs
 
 ### Roadmap Evolution
 
@@ -157,6 +161,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T06:09:08.823Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-navigation-polish/05-CONTEXT.md
+Last session: 2026-03-29T07:02:40.794Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None

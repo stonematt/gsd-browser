@@ -1224,6 +1224,98 @@
         .replace(/'/g, '&#x27;');
     }
 
+    /**
+     * Resolve a relative path by collapsing . and .. segments.
+     * Accepts a pre-joined string like "dir/subdir/../other/file.md".
+     * Returns a clean path with no leading slash.
+     */
+    function resolvePath(p) {
+      const parts = p.split('/');
+      const out = [];
+      for (const seg of parts) {
+        if (seg === '..') out.pop();
+        else if (seg !== '.' && seg !== '') out.push(seg);
+      }
+      return out.join('/');
+    }
+
+    /**
+     * Attach a delegated click handler to containerEl that intercepts clicks on
+     * relative .md links (and .md#fragment links) and navigates within the SPA.
+     *
+     * contextFn() returns { currentFilePath, sourceName, viewType }:
+     *   currentFilePath — absolute or relative path of the file currently shown
+     *   sourceName      — active source name (used in browse URL hash)
+     *   viewType        — 'browse' | 'detail'
+     */
+    function interceptMdLinks(containerEl, contextFn) {
+      containerEl.addEventListener('click', async function(e) {
+        const a = e.target.closest('a[href]');
+        if (!a) return;
+
+        const href = a.getAttribute('href');
+        if (!href) return;
+
+        // Skip external links — let them open normally
+        if (href.startsWith('http://') || href.startsWith('https://')) return;
+
+        // Skip fragment-only links (#heading) — let the browser scroll natively
+        if (href.startsWith('#')) return;
+
+        // Only intercept .md links (with optional #fragment)
+        const hasMdExt = href.endsWith('.md') || href.includes('.md#');
+        if (!hasMdExt) return;
+
+        e.preventDefault();
+
+        // Split the href into file part and optional heading fragment
+        const hashIdx = href.indexOf('#');
+        const filePart = hashIdx === -1 ? href : href.substring(0, hashIdx);
+        const hashFragment = hashIdx === -1 ? '' : href.substring(hashIdx + 1);
+
+        const { currentFilePath, sourceName, viewType } = contextFn();
+        if (!currentFilePath) return;
+
+        // Build the resolved path from the current file's directory
+        const lastSlash = currentFilePath.lastIndexOf('/');
+        const dir = lastSlash === -1 ? '' : currentFilePath.substring(0, lastSlash + 1);
+
+        if (viewType === 'browse') {
+          // Browse view: paths are relative-to-source (no leading slash)
+          const resolved = resolvePath(dir + filePart);
+          const hashUrl = '#/browse/' + encodeURIComponent(sourceName) + '/' + resolved;
+          history.pushState(null, '', hashUrl);
+          await loadFile(sourceName, resolved);
+          if (hashFragment) {
+            const el = containerEl.querySelector('#' + CSS.escape(hashFragment));
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }
+        } else {
+          // Detail view: currentFilePath is an absolute filesystem path
+          const resolved = resolvePath(dir + filePart);
+          const url = '/render?path=' + encodeURIComponent(resolved) + '&fragment=true';
+          const contentEl = document.getElementById('phase-content');
+          contentEl.innerHTML = '<p class="phase-content-loading">Loading...</p>';
+          try {
+            const res = await fetch(url);
+            if (!res.ok) {
+              showError(contentEl, 'phase-content-error', 'Failed to load file (HTTP ' + res.status + ')');
+              return;
+            }
+            contentEl.innerHTML = await res.text();
+            contentEl.dataset.currentFile = resolved;
+            contentEl.scrollTop = 0;
+            if (hashFragment) {
+              const el = contentEl.querySelector('#' + CSS.escape(hashFragment));
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
+          } catch (err) {
+            showError(contentEl, 'phase-content-error', 'Error: ' + err.message);
+          }
+        }
+      });
+    }
+
     /** Fetch a URL, check status, parse JSON. Throws on non-ok response. */
     async function apiFetch(url) {
       const res = await fetch(url);
@@ -2678,6 +2770,8 @@
         const html = await res.text();
 
         contentEl.innerHTML = html;
+        // Track current file path so interceptMdLinks can resolve relative links
+        contentEl.dataset.currentFile = filePath;
 
         // Build structured plan metadata card for PLAN.md files
         if (planDetails && planDetails.length > 0) {
@@ -2749,6 +2843,23 @@
     // ----------------------------------------------------------------
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // Wire relative .md link interception in browse view
+      interceptMdLinks(document.getElementById('browse-content'), () => ({
+        currentFilePath: lastViewedFile.get(currentSource) || '',
+        sourceName: currentSource,
+        viewType: 'browse'
+      }));
+
+      // Wire relative .md link interception in detail view
+      interceptMdLinks(document.getElementById('phase-content'), () => {
+        const contentEl = document.getElementById('phase-content');
+        return {
+          currentFilePath: contentEl.dataset.currentFile || '',
+          sourceName: currentProjectName,
+          viewType: 'detail'
+        };
+      });
+
       // Wire sidebar toggle
       document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
 

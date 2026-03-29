@@ -198,7 +198,11 @@ Plans:
   1. `npx gsd-browser` on a machine with no prior install starts the server and opens the browser
   2. The package is published on npm as a public package and `npm view gsd-browser` returns the package metadata
   3. The startup message prints the current version and the server URL
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Package metadata, open dependency, first-run CWD detection, auto-open config, startup banner
+- [ ] 06-02-PLAN.md — Project README + npm publish verification checkpoint
 
 ## Progress
 
@@ -217,4 +221,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.
 | 4.5.3. Dashboard Tile Redesign | 2/2 | Complete   | 2026-03-28 |
 | 4.5.4. Detail Page Layout | 2/2 | Complete    | 2026-03-29 |
 | 5. Navigation Polish | 2/2 | Complete    | 2026-03-29 |
-| 6. Distribution | 0/TBD | Not started | - |
+| 6. Distribution | 0/2 | Not started | - |

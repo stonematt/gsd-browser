@@ -1186,3 +1186,62 @@ body {
   font-size: 0.85rem;
   margin-top: 0.5rem;
 }
+
+/* === TOC and heading anchor styles (NAV-05, NAV-06) === */
+
+.doc-toc {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg-elevated);
+  font-size: 0.875rem;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.doc-toc summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-muted);
+  list-style: none;
+}
+
+.doc-toc summary::-webkit-details-marker {
+  display: none;
+}
+
+.doc-toc ul {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.doc-toc li {
+  line-height: 1.8;
+}
+
+.doc-toc a {
+  color: var(--text-link);
+  text-decoration: none;
+}
+
+.doc-toc a:hover {
+  text-decoration: underline;
+}
+
+.header-anchor {
+  color: var(--text-muted);
+  text-decoration: none;
+  opacity: 0;
+  margin-right: 0.4em;
+  font-size: 0.9em;
+  transition: opacity 0.15s;
+}
+
+.markdown-body h2:hover .header-anchor,
+.markdown-body h3:hover .header-anchor,
+.markdown-body h4:hover .header-anchor {
+  opacity: 1;
+}

@@ -706,58 +706,48 @@
       border-color: var(--text-link);
     }
 
-    /* Phase timeline */
-    #phase-timeline-container {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border-default);
-      flex-shrink: 0;
-      overflow-x: hidden;
+    /* Detail body: 3-column grid (phase navigator | file list | content) */
+    #detail-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 200px 180px minmax(0, 1fr);
+      grid-template-rows: 1fr;
+      overflow: hidden;
+      transition: grid-template-columns 200ms ease;
     }
 
-    .phase-timeline {
-      display: flex;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      row-gap: 8px;
-      gap: 0;
+    #detail-body.nav-collapsed {
+      grid-template-columns: 0px 180px minmax(0, 1fr);
     }
 
-    .phase-subphase-group {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .phase-timeline-empty {
-      color: var(--text-dimmed);
-      font-style: italic;
+    #phase-navigator {
+      overflow: hidden;
+      width: 200px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-default);
+      overflow-y: auto;
+      padding: 8px 0;
       font-size: 13px;
     }
 
-    .phase-node {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
+    .nav-col-toggle {
+      width: 22px;
+      height: 22px;
+      border: 1px solid var(--border-default);
+      border-radius: 4px;
+      background: var(--bg-surface);
+      color: var(--text-muted);
       cursor: pointer;
-      padding: 4px 12px;
-      border-radius: 6px;
-      transition: background 0.1s;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 4px 4px 4px 4px;
     }
 
-    .phase-node:hover {
-      background: var(--hover-subtle);
-    }
-
-    .phase-node--selected {
-      background: var(--active-bg);
-    }
-
-    .phase-connector {
-      width: 32px;
-      height: 2px;
-      background: var(--border-default);
-      flex-shrink: 0;
+    .nav-col-toggle:hover {
+      background: var(--hover-faint);
+      color: var(--text-primary);
     }
 
     .phase-dot {
@@ -857,15 +847,6 @@
     .phase-file-item--validation::before {
       content: '\25C9 ';
       color: var(--text-muted);
-    }
-
-    /* Documentation panel */
-    #docs-panel {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 220px 1fr;
-      grid-template-rows: 1fr;
-      overflow: hidden;
     }
 
     #phase-file-list {
@@ -1080,14 +1061,15 @@
         </div>
       </div>
 
-      <!-- Phase timeline (horizontal bar with dots) -->
-      <div id="phase-timeline-container">
-        <div id="phase-timeline" class="phase-timeline"></div>
-      </div>
-
-      <!-- Documentation panel: file list left, rendered content right -->
-      <div id="docs-panel">
-        <div id="phase-file-list"></div>
+      <!-- Detail body: 3-column grid (phase navigator | file list | content) -->
+      <div id="detail-body">
+        <div id="phase-navigator">
+          <!-- Populated by JS in Plan 02 -->
+        </div>
+        <div id="phase-file-list">
+          <button class="nav-col-toggle" id="nav-col-toggle" title="Toggle phase navigator">&#9664;</button>
+          <!-- File list populated by JS -->
+        </div>
         <div id="phase-content"></div>
       </div>
     </div>
@@ -1950,8 +1932,8 @@
 
       // Show loading state
       document.getElementById('project-title').textContent = escapeHtml(sourceName);
-      document.getElementById('phase-timeline').innerHTML = '<span class="phase-timeline-empty">Loading...</span>';
-      document.getElementById('phase-file-list').innerHTML = '';
+      document.getElementById('phase-navigator').innerHTML = '';
+      document.getElementById('phase-file-list').innerHTML = '<button class="nav-col-toggle" id="nav-col-toggle" title="Toggle phase navigator">&#9664;</button>';
       document.getElementById('phase-content').innerHTML = '<p class="phase-content-loading">Loading...</p>';
       document.getElementById('branch-bar').hidden = true;
 
@@ -1992,6 +1974,9 @@
           .map(num => ({ numStr: num, displayNum: num, status: 'pending', slug: pNames[num] || '', files: [], planDetails: [] }));
         const allTimelinePhases = [...phases, ...pendingPhases]
           .sort((a, b) => comparePhaseNums(a.numStr, b.numStr));
+        // Store sourcePath on #detail-body for use by selectPhase click handlers
+        const detailBody = document.getElementById('detail-body');
+        if (detailBody) detailBody.dataset.sourcePath = data.source ? data.source.path : '';
         renderTimeline(allTimelinePhases);
 
         // Auto-select phase: first in-progress, then last complete, then first
@@ -2007,15 +1992,13 @@
         if (autoPhase) {
           selectPhase(autoPhase, data.source ? data.source.path : null);
         } else {
-          document.getElementById('phase-file-list').innerHTML = '';
+          document.getElementById('phase-file-list').innerHTML = '<button class="nav-col-toggle" id="nav-col-toggle" title="Toggle phase navigator">&#9664;</button>';
           document.getElementById('phase-content').innerHTML =
             '<p class="phase-content-loading">No phases found.</p>';
-          document.getElementById('phase-timeline').innerHTML =
-            '<span class="phase-timeline-empty">No phases found.</span>';
         }
       } catch (err) {
-        document.getElementById('phase-timeline').innerHTML =
-          '<span class="phase-timeline-empty">Error loading project: ' + escapeHtml(err.message) + '</span>';
+        document.getElementById('phase-navigator').innerHTML =
+          '<span class="phase-content-error">Error loading project: ' + escapeHtml(err.message) + '</span>';
         document.getElementById('phase-content').innerHTML = '';
       }
     }
@@ -2152,6 +2135,7 @@
 
     function renderTimeline(phases) {
       const container = document.getElementById('phase-timeline');
+      if (!container) return; // #phase-timeline replaced by #phase-navigator in Plan 02
       container.innerHTML = '';
 
       if (!phases || phases.length === 0) {
@@ -2209,19 +2193,26 @@
       if (!phaseObj) return;
       currentProjectPhase = phaseObj;
 
-      // Store sourcePath on the timeline container for click handlers
+      // Store sourcePath on #detail-body (preferred) or legacy #phase-timeline container
+      const detailBody = document.getElementById('detail-body');
       const container = document.getElementById('phase-timeline');
-      container.dataset.sourcePath = sourcePath || '';
-
-      // Update selected highlight on nodes
-      const allNodes = container.querySelectorAll('.phase-node');
-      allNodes.forEach(n => {
-        n.classList.toggle('phase-node--selected', n.dataset.phaseNum === String(phaseObj.numStr));
-      });
+      const resolvedSourcePath = sourcePath
+        || (detailBody && detailBody.dataset.sourcePath)
+        || (container && container.dataset.sourcePath)
+        || '';
+      if (detailBody) detailBody.dataset.sourcePath = resolvedSourcePath;
+      if (container) {
+        container.dataset.sourcePath = resolvedSourcePath;
+        // Update selected highlight on nodes (legacy horizontal timeline, no-op if #phase-timeline absent)
+        const allNodes = container.querySelectorAll('.phase-node');
+        allNodes.forEach(n => {
+          n.classList.toggle('phase-node--selected', n.dataset.phaseNum === String(phaseObj.numStr));
+        });
+      }
 
       // Build file list (only .md files)
       const fileListEl = document.getElementById('phase-file-list');
-      fileListEl.innerHTML = '';
+      fileListEl.innerHTML = '<button class="nav-col-toggle" id="nav-col-toggle" title="Toggle phase navigator">&#9664;</button>';
 
       const mdFiles = (phaseObj.files || []).filter(f => f.endsWith('.md'));
       if (mdFiles.length === 0) {
@@ -2248,7 +2239,7 @@
           // Highlight active
           fileListEl.querySelectorAll('.phase-file-item').forEach(el => el.classList.remove('active'));
           item.classList.add('active');
-          loadPhaseFile(currentProjectName, phaseDir, fileName, sourcePath, phaseObj.planDetails);
+          loadPhaseFile(currentProjectName, phaseDir, fileName, resolvedSourcePath, phaseObj.planDetails);
         });
 
         fileListEl.appendChild(item);
@@ -2258,7 +2249,7 @@
       const firstItem = fileListEl.querySelector('.phase-file-item');
       if (firstItem) {
         firstItem.classList.add('active');
-        loadPhaseFile(currentProjectName, phaseDir, mdFiles[0], sourcePath, phaseObj.planDetails);
+        loadPhaseFile(currentProjectName, phaseDir, mdFiles[0], resolvedSourcePath, phaseObj.planDetails);
       }
     }
 

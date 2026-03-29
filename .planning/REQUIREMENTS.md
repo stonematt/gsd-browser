@@ -9,7 +9,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Server
 
-- [ ] **SERV-01**: Local HTTP server starts with `npx gsd-browser` and opens browser automatically
+- [x] **SERV-01**: Local HTTP server starts with `npx gsd-browser` and opens browser automatically
 - [x] **SERV-02**: Server renders GitHub-Flavored Markdown (tables, task lists, fenced code, strikethrough, footnotes)
 - [x] **SERV-03**: Code blocks display with syntax highlighting and language detection
 - [x] **SERV-04**: Every page load reads fresh file content from disk (no caching)
@@ -70,7 +70,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Distribution
 
-- [ ] **DIST-01**: Installable and runnable via `npx gsd-browser` with zero prior install
+- [x] **DIST-01**: Installable and runnable via `npx gsd-browser` with zero prior install
 - [ ] **DIST-02**: Published to npm as a public package
 
 ## v2 Requirements
@@ -113,7 +113,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SERV-01 | Phase 6 | Pending |
+| SERV-01 | Phase 6 | Complete |
 | SERV-02 | Phase 2 | Complete |
 | SERV-03 | Phase 2 | Complete |
 | SERV-04 | Phase 1 | Complete |
@@ -156,7 +156,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-17 | Phase 4.5.4 | Complete |
 | DASH-18 | Phase 4.5.4 | Complete |
 | DASH-19 | Phase 4.5.4 | Complete |
-| DIST-01 | Phase 6 | Pending |
+| DIST-01 | Phase 6 | Complete |
 | DIST-02 | Phase 6 | Pending |
 
 **Coverage:**

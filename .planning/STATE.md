@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-29T16:17:07.239Z"
+stopped_at: Completed 06-distribution-01-PLAN.md
+last_updated: "2026-03-29T22:16:08.715Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
   completed_phases: 10
-  total_plans: 23
-  completed_plans: 23
+  total_plans: 25
+  completed_plans: 24
   percent: 43
 ---
 
@@ -72,6 +72,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5.4-detail-page-layout P02 | 90min | 3 tasks | 1 files |
 | Phase 05-navigation-polish P01 | 2min | 2 tasks | 4 files |
 | Phase 05-navigation-polish P02 | 15min | 2 tasks | 1 files |
+| Phase 06-distribution P01 | 6min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -147,6 +148,10 @@ Recent decisions affecting current work:
 - [Phase 05-navigation-polish]: TOC element rendered outside markdown-body div — sibling layout avoids double max-width constraints
 - [Phase 05-navigation-polish]: buildTocHtml threshold is <2 headings: no TOC element injected for single-heading docs
 - [Phase 05-navigation-polish]: Intercept #fragment links in SPA — native browser scroll targets window.scrollY but content divs use overflow:auto; scrollIntoView on element scrolls the nearest scrollable ancestor correctly
+- [Phase 06-distribution]: resolveShouldOpen exported from sources.js as pure function for testability — keeps bin thin
+- [Phase 06-distribution]: formatBanner exported from server.js for unit testing without starting server
+- [Phase 06-distribution]: loadConfig normalizes missing sources key to prevent crashes when config has only open:false
+- [Phase 06-distribution]: First-run auto-open default is true; --no-open suppresses; config.open persists preference
 
 ### Roadmap Evolution
 
@@ -163,6 +168,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T16:17:07.236Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-distribution/06-CONTEXT.md
+Last session: 2026-03-29T22:16:08.713Z
+Stopped at: Completed 06-distribution-01-PLAN.md
+Resume file: None

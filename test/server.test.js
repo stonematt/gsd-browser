@@ -1524,3 +1524,52 @@ describe('/api/projects/:name/detail phaseGoals', () => {
     });
   });
 });
+
+describe('DASH-19: /render frontmatter stripping', () => {
+  test('DASH-19: /render strips YAML frontmatter from output', async () => {
+    const fmFile = path.join(testDir, 'with-frontmatter.md');
+    await fs.writeFile(fmFile, '---\nphase: test\nplan: 01\n---\n# Hello\n\nBody text.\n');
+    const fastify = createServer(makeSources(testDir));
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/render',
+      query: { path: 'with-frontmatter.md', fragment: 'true' }
+    });
+    assert.equal(response.statusCode, 200);
+    assert.ok(!response.body.includes('phase: test'), 'frontmatter key "phase: test" should be stripped');
+    assert.ok(!response.body.includes('plan: 01'), 'frontmatter key "plan: 01" should be stripped');
+    // Should not contain bare --- delimiter lines (from frontmatter)
+    assert.ok(!/<p>---<\/p>/.test(response.body), 'bare --- delimiters should be stripped');
+    assert.ok(response.body.includes('<h1>Hello</h1>'), 'body heading should be rendered');
+    await fastify.close();
+  });
+
+  test('DASH-19: /render without frontmatter still renders normally', async () => {
+    const fastify = createServer(makeSources(testDir));
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/render',
+      query: { path: 'README.md', fragment: 'true' }
+    });
+    assert.equal(response.statusCode, 200);
+    assert.ok(response.body.includes('<h1>Hello World</h1>'), 'heading should be rendered');
+    assert.ok(response.body.includes('This is a test'), 'body text should be present');
+    await fastify.close();
+  });
+
+  test('DASH-19: frontmatter strip handles Windows line endings', async () => {
+    const fmFileWin = path.join(testDir, 'with-frontmatter-crlf.md');
+    await fs.writeFile(fmFileWin, '---\r\nphase: win\r\nplan: 02\r\n---\r\n# Windows\r\n\r\nCRLF body.\r\n');
+    const fastify = createServer(makeSources(testDir));
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/render',
+      query: { path: 'with-frontmatter-crlf.md', fragment: 'true' }
+    });
+    assert.equal(response.statusCode, 200);
+    assert.ok(!response.body.includes('phase: win'), 'Windows frontmatter key should be stripped');
+    assert.ok(!response.body.includes('plan: 02'), 'Windows frontmatter key should be stripped');
+    assert.ok(response.body.includes('<h1>Windows</h1>'), 'body heading should be rendered');
+    await fastify.close();
+  });
+});

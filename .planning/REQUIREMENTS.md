@@ -63,6 +63,10 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DASH-13**: Completed phases on cards render as compressed indicators (rectangles) without text labels, preserving card space for active work
 - [x] **DASH-14**: Sub-phases branch visually below their integer parent with depth-tier rows, not as linear peers
 - [x] **DASH-15**: Frontier (active/future) phases display full slug name and goal excerpt on the card
+- [x] **DASH-16**: Detail page renders as a 3-column grid: phase navigator (200px, collapsible) | file list (180px) | document content (flex)
+- [x] **DASH-17**: Completed phases collapse into a single summary row with mini dot strip; clicking expands the full list
+- [x] **DASH-18**: Col 1 collapse toggle hides/shows the phase navigator with CSS transition; collapse state persists in localStorage
+- [x] **DASH-19**: YAML frontmatter is stripped from rendered markdown body; PLAN.md files show structured metadata card only
 
 ### Distribution
 
@@ -148,6 +152,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-13 | Phase 4.5.3 | Complete |
 | DASH-14 | Phase 4.5.3 | Complete |
 | DASH-15 | Phase 4.5.3 | Complete |
+| DASH-16 | Phase 4.5.4 | Complete |
+| DASH-17 | Phase 4.5.4 | Complete |
+| DASH-18 | Phase 4.5.4 | Complete |
+| DASH-19 | Phase 4.5.4 | Complete |
 | DIST-01 | Phase 6 | Pending |
 | DIST-02 | Phase 6 | Pending |
 

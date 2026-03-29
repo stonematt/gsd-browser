@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4.5.1: Dashboard UX Polish** - Timeline overflow strategy, sub-phase visual hierarchy, pending phase visibility on cards, plan status surfacing in sidebar, structured plan metadata display, and requirement tag badges (INSERTED) (completed 2026-03-25)
 - [ ] **Phase 4.5.2: Theme Token System** - Extract hardcoded colors into CSS custom properties, add light theme via prefers-color-scheme media query (INSERTED)
 - [x] **Phase 4.5.3: Dashboard Tile Redesign** - Compressed history / expanded frontier dot strip, branching stems for sub-phases, dot sizing by plan count, depth-aware sub-phase parsing (INSERTED) (completed 2026-03-28)
-- [ ] **Phase 4.5.4: Detail Page Layout** - Three-column layout with vertical phase navigator, collapsible completed section, col 1 collapse with localStorage persistence, frontmatter stripping from rendered output (INSERTED)
+- [x] **Phase 4.5.4: Detail Page Layout** - Three-column layout with vertical phase navigator, collapsible completed section, col 1 collapse with localStorage persistence, frontmatter stripping from rendered output (INSERTED) (completed 2026-03-29)
 - [ ] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams
 - [ ] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX
 
@@ -170,7 +170,7 @@ Plans:
   3. The col 1 collapse toggle hides/shows the phase navigator with a CSS transition; collapse state persists in localStorage across page loads
   4. PLAN.md files render with a structured metadata card (wave, deps, requirements) and the raw YAML frontmatter is stripped from the rendered markdown body
   5. Sub-phases are indented by depth level in the vertical navigator (22px per level)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 04.5.4-01-PLAN.md — Server-side frontmatter stripping + three-column grid HTML/CSS structure
@@ -211,6 +211,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.
 | 4.5.1. Dashboard UX Polish | 3/3 | Complete   | 2026-03-25 |
 | 4.5.2. Theme Token System | 0/2 | Not started | - |
 | 4.5.3. Dashboard Tile Redesign | 2/2 | Complete   | 2026-03-28 |
-| 4.5.4. Detail Page Layout | 1/2 | In Progress|  |
+| 4.5.4. Detail Page Layout | 2/2 | Complete   | 2026-03-29 |
 | 5. Navigation Polish | 0/TBD | Not started | - |
 | 6. Distribution | 0/TBD | Not started | - |

@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Completed 04.5.4-01-PLAN.md
-last_updated: "2026-03-29T02:33:43.604Z"
+stopped_at: Completed 04.5.4-02-PLAN.md
+last_updated: "2026-03-29T05:47:07.124Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 21
-  completed_plans: 20
+  completed_plans: 21
   percent: 43
 ---
 
@@ -69,6 +69,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5.3-dashboard-tile-redesign P01 | 12min | 2 tasks | 3 files |
 | Phase 04.5.3-dashboard-tile-redesign P02 | 90min | 2 tasks | 5 files |
 | Phase 04.5.4 P01 | 3min | 2 tasks | 3 files |
+| Phase 04.5.4-detail-page-layout P02 | 90min | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -137,6 +138,9 @@ Recent decisions affecting current work:
 - [Phase 04.5.4]: DASH-19: Strip frontmatter before renderMarkdown() using tolerant regex; handles LF and CRLF
 - [Phase 04.5.4]: Store sourcePath on #detail-body dataset; selectPhase() falls back to #detail-body if #phase-timeline absent
 - [Phase 04.5.4]: renderTimeline() returns early (no-op) when #phase-timeline element absent — graceful degradation until Plan 02
+- [Phase 04.5.4-detail-page-layout]: Flat sibling DOM for phase navigator rows — indentation via padding-left, not nested containers
+- [Phase 04.5.4-detail-page-layout]: splitHistoryFrontier() drives completed/frontier split; completed section collapsed by default with mini dot strip
+- [Phase 04.5.4-detail-page-layout]: applyNavCollapseState() called inside loadProjectDetail() so localStorage state restores on each project navigation
 
 ### Roadmap Evolution
 
@@ -153,6 +157,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T02:33:43.601Z
-Stopped at: Completed 04.5.4-01-PLAN.md
+Last session: 2026-03-29T05:47:07.121Z
+Stopped at: Completed 04.5.4-02-PLAN.md
 Resume file: None

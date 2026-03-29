@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Completed 04.5.3-01-PLAN.md
-last_updated: "2026-03-28T18:08:56.715Z"
+stopped_at: Completed 04.5.3-02-PLAN.md
+last_updated: "2026-03-28T21:25:44.735Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 19
-  completed_plans: 18
+  completed_plans: 19
   percent: 43
 ---
 
@@ -67,6 +67,7 @@ Progress: [████░░░░░░] 43%
 | Phase 04.5.2-theme-token-system P01 | 10min | 2 tasks | 5 files |
 | Phase 04.5.2-theme-token-system P02 | 15 | 2 tasks | 2 files |
 | Phase 04.5.3-dashboard-tile-redesign P01 | 12min | 2 tasks | 3 files |
+| Phase 04.5.3-dashboard-tile-redesign P02 | 90min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -128,6 +129,10 @@ Recent decisions affecting current work:
 - [Phase 04.5.3-01]: comparePhaseNums replaces parseFloat-based sort in both buildPhaseList and buildPhaseListFromReader — preserves depth-2 ordering
 - [Phase 04.5.3-01]: requirementCount computed as Set().size over all planDetails[].requirements — deduped across plans
 - [Phase 04.5.3-01]: parseRoadmapPhaseGoals parses **Goal**: line after each phase heading; resets currentPhase to null after capture
+- [Phase 04.5.3-02]: normalizePhaseNum() strips leading zeros per segment so padded numStr maps correctly to phaseNames/phaseGoals keys
+- [Phase 04.5.3-02]: History strip uses project-relative scaling: maxPlans drives proportional rectangle widths so largest phase fills max width
+- [Phase 04.5.3-02]: L-elbow SVG connectors render tree hierarchy between parent and child phase rects in history strip
+- [Phase 04.5.3-02]: bin/dev-server script manages server lifecycle via PID file at /tmp/gsd-browser-dev.pid
 
 ### Roadmap Evolution
 
@@ -144,6 +149,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T18:08:56.712Z
-Stopped at: Completed 04.5.3-01-PLAN.md
+Last session: 2026-03-28T21:25:44.733Z
+Stopped at: Completed 04.5.3-02-PLAN.md
 Resume file: None

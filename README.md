@@ -1,100 +1,95 @@
 # gsd-browser
 
-A local markdown server for browsing the living documentation that AI agents continuously create across your repos.
+Browse markdown artifacts that AI agents write, fresh from disk.
 
-Point it at your repos, and get a clean UI to navigate `.planning/`, `docs/`, and other markdown-heavy directories — always serving the current file from disk, never a stale cache.
+<!-- TODO: Add actual screenshot -->
+![Dashboard](docs/screenshot-dashboard.png)
 
-## Why
+## What is this
 
-AI coding tools like [GSD](https://github.com/stonematt/get-shit-done-cc) produce rich `.planning/` artifact trees — roadmaps, phase plans, research docs, state files, verification reports. These files are actively written and updated during development. gsd-browser gives you a way to read them without context-switching out of your workflow.
+[GSD (get-shit-done)](https://github.com/stonematt/get-shit-done-cc) is a Claude Code planning framework where AI agents continuously produce structured markdown artifacts — roadmaps, phase plans, research docs, state files — in a `.planning/` directory as they work.
 
-## Features
+gsd-browser is a companion tool that lets you read those artifacts in a clean browser UI without leaving your workflow. Point it at your repos and get a dashboard showing project progress, phase timelines, and branch-aware milestone state. Every page load reads directly from disk — no caching, no stale content.
 
-- **Multi-repo source registration** — register any number of repos or paths; browse them all from one UI
-- **Convention-based discovery** — `.planning/`, `docs/`, and `README.md` are auto-discovered in registered repos
-- **GSD project dashboard** — card-style summaries for every GSD project with phase progress, editorial context, and branch awareness
-- **Phase timeline drill-down** — click into a project to see completed/in-progress/pending phases with plan metadata and requirement badges
-- **Multi-branch support** — for git repos with multiple branches containing `.planning/`, view per-branch milestone progress
-- **Fresh-from-disk rendering** — every page load reads from the filesystem; no caching, no stale content
-- **GFM markdown** — tables, task lists, fenced code with syntax highlighting (Shiki), footnotes, strikethrough
-- **Mermaid diagrams** — rendered server-side as SVG, no client-side JavaScript required
-- **Dark theme** — GitHub-dark palette, designed for developers
-
-## Quick start
+## Quick Start
 
 ```bash
 npx gsd-browser
 ```
 
-Or install globally:
+Run in any directory. gsd-browser auto-discovers `.planning/`, `docs/`, and `README.md`. If found, it auto-registers the directory and opens your browser to the dashboard.
+
+## Installation
+
+For a permanent global install:
 
 ```bash
 npm install -g gsd-browser
-gsd-browser
 ```
 
-### Register sources
-
-```bash
-# Add a repo (auto-discovers .planning/, docs/, README.md)
-gsd-browser add ~/src/my-project
-
-# Add with a custom name
-gsd-browser add ~/src/my-project --name "My Project"
-
-# List registered sources
-gsd-browser list
-
-# Remove a source
-gsd-browser remove my-project
-```
+## Usage
 
 ### Start the server
 
 ```bash
-# Default: localhost:3000
 gsd-browser
-
-# Custom port
-gsd-browser --port 4242
 ```
 
-Open `http://localhost:3000` (or your custom port) in a browser.
+Starts on port 4242 by default, opens browser automatically. On first run in a directory with GSD conventions, auto-registers the current directory.
 
-## What you'll see
+### CLI Reference
 
-![GSD Browser Dashboard](docs/images/dashboard.png)
-
-**Dashboard** — project cards showing milestone progress, current focus, phase dot strips, and quick-links to key planning documents.
-
-**Project detail** — phase timeline with completed/active/pending phases, file sidebar with plan/summary/research classification, and a content pane rendering the selected document with structured metadata cards for plan files.
-
-**File browser** — tree navigation for any registered source, with rendered markdown in the content pane.
-
-## Stack
-
-- **Runtime:** Node.js 20+
-- **Server:** Fastify 5
-- **Rendering:** markdown-it 14 + Shiki 4 (syntax highlighting) + Mermaid 11 (diagrams, server-side SVG)
-- **Frontend:** Vanilla JS single-page app (no build step)
-- **Config:** XDG-compliant config persistence (`~/.config/gsd-browser/`)
-
-## Security
-
-- Binds exclusively to `127.0.0.1` (localhost only)
-- Path traversal protection via `fs.realpath()` boundary checks
-- Content-Security-Policy headers on all responses
-- Read-only — never modifies source files
-
-## Development
+**Source management**
 
 ```bash
-git clone https://github.com/stonematt/gsd-browser.git
-cd gsd-browser
-npm install
-npm test
-node bin/gsd-browser.cjs --port 4242
+# Register a source directory (auto-discovers conventions)
+gsd-browser add [path]
+
+# Register with a custom display name
+gsd-browser add . --name my-project
+
+# Remove a registered source by name or path
+gsd-browser remove <name|path>
+
+# List all registered sources
+gsd-browser list
 ```
+
+**Server options**
+
+```
+--port <n>, -p <n>    Port to listen on (default: 4242)
+--no-open             Suppress browser auto-open on startup
+                      (save permanently: set "open": false in your config)
+```
+
+**General**
+
+```
+--version, -v         Print version and exit
+--help, -h            Show help message
+```
+
+## Features
+
+- GFM rendering with syntax highlighting (Shiki) and Mermaid diagrams rendered server-side as SVG
+- Multi-project dashboard with phase timeline and progress tracking
+- File tree browser with source switching across registered projects
+- Fresh-from-disk on every request — no caching, no stale reads
+- Convention-based discovery: `.planning/`, `docs/`, `README.md` auto-detected
+- Branch-aware GSD progress across git branches
+- Dark theme with Catppuccin colors
+- Localhost-only with Content-Security-Policy headers (security-first)
+
+## How It Works
+
+Node.js + Fastify serves a single-page application. Markdown files are rendered server-side using markdown-it, Shiki (syntax highlighting), and Mermaid (diagram SVG generation). The frontend is vanilla JavaScript with no build step. Source registration is persisted in a config file under `~/.config/gsd-browser/`.
+
+## Configuration
+
+Config file location: `~/.config/gsd-browser/sources.json`
+
+The config stores registered source paths and the `open` preference (whether to auto-open the browser on startup). You can set `"open": false` to permanently suppress browser auto-open.
 
 ## License
 

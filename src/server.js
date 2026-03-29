@@ -1085,6 +1085,8 @@ function createServer(sources) {
       });
     }
 
+    // Strip YAML frontmatter (--- delimited block at start of file)
+    content = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
     const bodyHtml = await renderMarkdown(content);
     const isFragment = request.query.fragment === 'true';
     const html = buildPage({ filePath: requestedPath, bodyHtml, fragment: isFragment });

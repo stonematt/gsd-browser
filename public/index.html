@@ -1259,8 +1259,17 @@
         // Skip external links — let them open normally
         if (href.startsWith('http://') || href.startsWith('https://')) return;
 
-        // Skip fragment-only links (#heading) — let the browser scroll natively
-        if (href.startsWith('#')) return;
+        // Intercept fragment-only links (#heading) — browser native scroll won't
+        // work because the body has overflow:hidden; content lives in a scrollable div
+        if (href.startsWith('#')) {
+          const fragment = href.substring(1);
+          const el = containerEl.querySelector('#' + CSS.escape(fragment));
+          if (el) {
+            e.preventDefault();
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+          return;
+        }
 
         // Only intercept .md links (with optional #fragment)
         const hasMdExt = href.endsWith('.md') || href.includes('.md#');

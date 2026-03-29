@@ -9,7 +9,10 @@ const {
   removeSource,
   listSources,
   loadConfig,
+  saveConfig,
+  discoverConventions,
   enrichSourcesWithConventions,
+  resolveShouldOpen,
 } = require('../src/sources.js');
 const pkg = require('../package.json');
 
@@ -22,7 +25,8 @@ Commands:
 
 Server options:
   -p, --port <n>     Port to listen on (default: 4242)
-      --open         Open browser after starting
+      --no-open      Suppress browser auto-open on startup
+                     (save permanently: add "open": false to your config)
 
 Add options:
   -n, --name <name>  Custom label for the source
@@ -34,7 +38,7 @@ General:
 
 const args = minimist(process.argv.slice(2), {
   string: ['port', 'name'],
-  boolean: ['open', 'help', 'version'],
+  boolean: ['open', 'no-open', 'help', 'version'],
   alias: { p: 'port', h: 'help', v: 'version', n: 'name' }
 });
 
@@ -118,6 +122,39 @@ async function main() {
   } else {
     // No subcommand — start the server with registered sources
     const config = await loadConfig();
+    const port = parseInt(args.port, 10) || 4242;
+    const shouldOpen = resolveShouldOpen(process.argv, config.open);
+
+    // First-run: no sources registered yet
+    if (config.sources.length === 0) {
+      const cwd = process.cwd();
+      const conventions = await discoverConventions(cwd);
+
+      if (conventions.length > 0) {
+        // Auto-register CWD because it has GSD conventions
+        const result = await addSource('.', {});
+        if (result.ok) {
+          result.source._autoRegistered = true;
+          const enriched = await enrichSourcesWithConventions([result.source]);
+          await start(port, enriched, { open: shouldOpen });
+        } else {
+          process.stderr.write(`Failed to auto-register current directory: ${result.reason}\n`);
+          process.exit(1);
+        }
+      } else {
+        // No conventions — show guided help then open /sources management page
+        process.stdout.write(
+          `No sources registered and no GSD conventions found in ${cwd}.\n\n` +
+          `To get started:\n` +
+          `  gsd-browser add /path/to/project   Add a project directory\n` +
+          `  gsd-browser add .                  Add current directory\n\n` +
+          `Starting server — manage sources in the browser:\n`
+        );
+        await start(port, [], { open: shouldOpen, openUrl: `http://127.0.0.1:${port}/sources` });
+      }
+      return;
+    }
+
     const allSources = await enrichSourcesWithConventions(config.sources);
 
     // Warn about missing sources
@@ -129,17 +166,7 @@ async function main() {
 
     const availableSources = allSources.filter(s => s.available);
 
-    if (availableSources.length === 0) {
-      process.stderr.write(
-        'No available sources registered.\n' +
-        'Register a source with: gsd-browser add <path>\n'
-      );
-      process.exit(1);
-    }
-
-    const port = parseInt(args.port, 10) || 4242;
-
-    await start(port, availableSources, { open: args.open });
+    await start(port, availableSources, { open: shouldOpen });
   }
 }
 

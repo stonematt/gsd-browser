@@ -1108,6 +1108,26 @@ function createServer(sources) {
 }
 
 /**
+ * Format the startup banner string.
+ *
+ * @param {string} version - Package version string
+ * @param {number} port - Actual listening port
+ * @param {Array<{ name: string, conventions?: string[], available?: boolean, _autoRegistered?: boolean }>} sources
+ * @returns {string}
+ */
+function formatBanner(version, port, sources) {
+  let out = `gsd-browser v${version} — http://127.0.0.1:${port}\n`;
+  for (const src of sources) {
+    const conventionStr = src.conventions && src.conventions.length > 0
+      ? src.conventions.map(c => c.endsWith('.md') ? c : c + '/').join(', ')
+      : 'no conventions';
+    const autoTag = src._autoRegistered ? ' (auto-registered)' : '';
+    out += `  ${src.name}: ${conventionStr}${autoTag}\n`;
+  }
+  return out;
+}
+
+/**
  * Start the server, bind to 127.0.0.1, print startup message.
  *
  * @param {number} port - Port number (0 = OS assigns random port)
@@ -1115,6 +1135,7 @@ function createServer(sources) {
  *   Source array (will be enriched with conventions at startup)
  * @param {object} [options] - Options
  * @param {boolean} [options.open] - Open browser after start
+ * @param {string} [options.openUrl] - URL to open (default: root URL)
  * @returns {Promise<import('fastify').FastifyInstance>}
  */
 async function start(port, sources, options = {}) {
@@ -1130,22 +1151,17 @@ async function start(port, sources, options = {}) {
   await fastify.listen({ port, host: '127.0.0.1' });
 
   const actualPort = fastify.server.address().port;
+  const pkgVersion = require('../package.json').version;
 
-  if (availableSources.length === 1) {
-    process.stdout.write(`gsd-browser serving ${availableSources[0].path} at http://127.0.0.1:${actualPort}\n`);
-  } else {
-    process.stdout.write(`gsd-browser serving ${availableSources.length} sources at http://127.0.0.1:${actualPort}\n`);
-    for (const src of availableSources) {
-      process.stdout.write(`  ${src.name}: ${src.path}\n`);
-    }
-  }
+  process.stdout.write(formatBanner(pkgVersion, actualPort, availableSources));
 
   if (options.open) {
+    const openUrl = options.openUrl || `http://127.0.0.1:${actualPort}`;
     try {
       const open = await import('open');
-      await open.default(`http://127.0.0.1:${actualPort}`);
+      await open.default(openUrl);
     } catch (err) {
-      // open package may not be installed — that's fine
+      // open package unavailable — non-fatal
     }
   }
 
@@ -1157,4 +1173,4 @@ async function start(port, sources, options = {}) {
   return fastify;
 }
 
-module.exports = { start, createServer, parseStateMd, parsePhaseDir, normalizePhaseNum, comparePhaseNums, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parseRoadmapPhaseNames, parseRoadmapPhaseGoals, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };
+module.exports = { start, createServer, formatBanner, parseStateMd, parsePhaseDir, normalizePhaseNum, comparePhaseNums, getPhaseInfo, isValidBranchName, parseRoadmapDeps, parseRoadmapPhaseNames, parseRoadmapPhaseGoals, parsePlanFrontmatter, classifyPhaseFiles, determinePhaseStatus, buildPlanDetails, buildPhaseListFromReader };

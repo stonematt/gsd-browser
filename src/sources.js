@@ -27,13 +27,30 @@ async function loadConfig(configPath) {
   const filePath = configPath || getConfigPath();
   try {
     const raw = await fsPromises.readFile(filePath, 'utf8');
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data.sources)) data.sources = [];
+    return data;
   } catch (err) {
     if (err.code === 'ENOENT') {
       return { sources: [] };
     }
     throw err;
   }
+}
+
+/**
+ * Resolve whether the browser should be opened on startup.
+ * Precedence: --no-open flag > --open flag > config.open value > default (true)
+ *
+ * @param {string[]} argv - Process argv array (e.g. process.argv)
+ * @param {boolean|undefined} configOpen - The config.open value, if set
+ * @returns {boolean}
+ */
+function resolveShouldOpen(argv, configOpen) {
+  if (argv.includes('--no-open'))  return false;
+  if (argv.includes('--open'))     return true;
+  if (configOpen !== undefined)    return configOpen;
+  return true; // default: always open
 }
 
 /**
@@ -212,4 +229,5 @@ module.exports = {
   listSources,
   discoverConventions,
   enrichSourcesWithConventions,
+  resolveShouldOpen,
 };

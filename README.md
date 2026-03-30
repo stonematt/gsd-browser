@@ -2,7 +2,7 @@
 
 Browse markdown artifacts that AI agents write, fresh from disk.
 
-![Dashboard](docs/screenshot-dashboard.png)
+![Dashboard](docs/images/dashboard.png)
 
 ## What is this
 

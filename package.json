@@ -32,7 +32,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/stonematt/gsd-browser"
+    "url": "git+https://github.com/stonematt/gsd-browser.git"
   },
   "homepage": "https://github.com/stonematt/gsd-browser#readme",
   "dependencies": {

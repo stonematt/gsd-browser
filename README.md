@@ -2,12 +2,11 @@
 
 Browse markdown artifacts that AI agents write, fresh from disk.
 
-<!-- TODO: Add actual screenshot -->
 ![Dashboard](docs/screenshot-dashboard.png)
 
 ## What is this
 
-[GSD (get-shit-done)](https://github.com/stonematt/get-shit-done-cc) is a Claude Code planning framework where AI agents continuously produce structured markdown artifacts — roadmaps, phase plans, research docs, state files — in a `.planning/` directory as they work.
+[GSD (get-shit-done)](https://github.com/gsd-build/get-shit-done) is a Claude Code planning framework where AI agents continuously produce structured markdown artifacts — roadmaps, phase plans, research docs, state files — in a `.planning/` directory as they work.
 
 gsd-browser is a companion tool that lets you read those artifacts in a clean browser UI without leaving your workflow. Point it at your repos and get a dashboard showing project progress, phase timelines, and branch-aware milestone state. Every page load reads directly from disk — no caching, no stale content.
 
@@ -78,7 +77,7 @@ gsd-browser list
 - Fresh-from-disk on every request — no caching, no stale reads
 - Convention-based discovery: `.planning/`, `docs/`, `README.md` auto-detected
 - Branch-aware GSD progress across git branches
-- Dark theme with Catppuccin colors
+- Light and dark themes with Catppuccin colors
 - Localhost-only with Content-Security-Policy headers (security-first)
 
 ## How It Works
@@ -90,6 +89,12 @@ Node.js + Fastify serves a single-page application. Markdown files are rendered 
 Config file location: `~/.config/gsd-browser/sources.json`
 
 The config stores registered source paths and the `open` preference (whether to auto-open the browser on startup). You can set `"open": false` to permanently suppress browser auto-open.
+
+## Author
+
+Matt Stone
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z41G13PX)
 
 ## License
 

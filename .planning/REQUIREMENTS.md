@@ -71,7 +71,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Distribution
 
 - [x] **DIST-01**: Installable and runnable via `npx gsd-browser` with zero prior install
-- [ ] **DIST-02**: Published to npm as a public package
+- [x] **DIST-02**: Published to npm as a public package
 
 ## v2 Requirements
 
@@ -157,7 +157,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-18 | Phase 4.5.4 | Complete |
 | DASH-19 | Phase 4.5.4 | Complete |
 | DIST-01 | Phase 6 | Complete |
-| DIST-02 | Phase 6 | Pending |
+| DIST-02 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 41 total

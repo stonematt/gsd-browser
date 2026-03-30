@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4.5.3: Dashboard Tile Redesign** - Compressed history / expanded frontier dot strip, branching stems for sub-phases, dot sizing by plan count, depth-aware sub-phase parsing (INSERTED) (completed 2026-03-28)
 - [x] **Phase 4.5.4: Detail Page Layout** - Three-column layout with vertical phase navigator, collapsible completed section, col 1 collapse with localStorage persistence, frontmatter stripping from rendered output (INSERTED) (completed 2026-03-29)
 - [x] **Phase 5: Navigation Polish** - Relative link resolution, heading anchors, inline TOC, and Mermaid diagrams (completed 2026-03-29)
-- [ ] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX
+- [x] **Phase 6: Distribution** - npx zero-install packaging, npm publication, and startup UX (completed 2026-03-30)
 
 ## Phase Details
 
@@ -198,7 +198,7 @@ Plans:
   1. `npx gsd-browser` on a machine with no prior install starts the server and opens the browser
   2. The package is published on npm as a public package and `npm view gsd-browser` returns the package metadata
   3. The startup message prints the current version and the server URL
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 06-01-PLAN.md — Package metadata, open dependency, first-run CWD detection, auto-open config, startup banner
@@ -221,4 +221,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 4.5 -> 4.5.1 -> 4.5.2 -> 4.
 | 4.5.3. Dashboard Tile Redesign | 2/2 | Complete   | 2026-03-28 |
 | 4.5.4. Detail Page Layout | 2/2 | Complete    | 2026-03-29 |
 | 5. Navigation Polish | 2/2 | Complete    | 2026-03-29 |
-| 6. Distribution | 1/2 | In Progress|  |
+| 6. Distribution | 2/2 | Complete   | 2026-03-30 |

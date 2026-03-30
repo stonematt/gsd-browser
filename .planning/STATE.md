@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase 4.5 (GSD Dashboard) added to roadmap — multi-project progress visualization with phase timeline drill-down and branch awareness
-stopped_at: Completed 06-distribution-01-PLAN.md
-last_updated: "2026-03-29T22:16:08.715Z"
+stopped_at: Completed 06-distribution-02-PLAN.md
+last_updated: "2026-03-30T01:36:46.769Z"
 last_activity: 2026-03-21 — Added Phase 4.5 (GSD Dashboard); 6 new requirements (DASH-01 through DASH-06)
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 25
-  completed_plans: 24
+  completed_plans: 25
   percent: 43
 ---
 
@@ -73,6 +73,7 @@ Progress: [████░░░░░░] 43%
 | Phase 05-navigation-polish P01 | 2min | 2 tasks | 4 files |
 | Phase 05-navigation-polish P02 | 15min | 2 tasks | 1 files |
 | Phase 06-distribution P01 | 6min | 3 tasks | 6 files |
+| Phase 06-distribution P02 | 15min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -152,6 +153,8 @@ Recent decisions affecting current work:
 - [Phase 06-distribution]: formatBanner exported from server.js for unit testing without starting server
 - [Phase 06-distribution]: loadConfig normalizes missing sources key to prevent crashes when config has only open:false
 - [Phase 06-distribution]: First-run auto-open default is true; --no-open suppresses; config.open persists preference
+- [Phase 06-distribution]: GSD repo link corrected to gsd-build/get-shit-done (canonical org)
+- [Phase 06-distribution]: npm pkg fix normalizes repository.url to git+https scheme for npm registry
 
 ### Roadmap Evolution
 
@@ -168,6 +171,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T22:16:08.713Z
-Stopped at: Completed 06-distribution-01-PLAN.md
+Last session: 2026-03-30T01:36:46.766Z
+Stopped at: Completed 06-distribution-02-PLAN.md
 Resume file: None

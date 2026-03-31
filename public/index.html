@@ -1901,7 +1901,7 @@
       const timer = showLoading(contentEl, 'content-loading');
 
       try {
-        const url = '/render?path=' + encodeURIComponent(filePath) + '&fragment=true';
+        const url = '/render?path=' + encodeURIComponent(filePath) + '&source=' + encodeURIComponent(sourceName) + '&fragment=true';
         const res = await fetch(url);
         clearTimeout(timer);
 

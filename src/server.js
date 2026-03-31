@@ -88,7 +88,7 @@ function parseRoadmapDeps(content) {
     // Match phase headers: ### Phase 1: Foundation  or  ### Phase 4.5: GSD Dashboard (INSERTED)
     const phaseMatch = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)?)\s*:/);
     if (phaseMatch) {
-      currentPhaseNum = phaseMatch[1];
+      currentPhaseNum = normalizePhaseNum(phaseMatch[1]);
       if (!deps[currentPhaseNum]) deps[currentPhaseNum] = [];
       continue;
     }
@@ -122,7 +122,7 @@ function parseRoadmapPhaseNames(content) {
   for (const line of lines) {
     const m = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)*)\s*:\s*(.+)/);
     if (m) {
-      names[m[1]] = m[2].replace(/\s*\(INSERTED\)\s*/, '').trim();
+      names[normalizePhaseNum(m[1])] = m[2].replace(/\s*\(INSERTED\)\s*/, '').trim();
     }
   }
   return names;
@@ -138,7 +138,7 @@ function parseRoadmapPhaseGoals(content) {
   let currentPhase = null;
   for (const line of lines) {
     const mHeading = line.match(/^###\s+Phase\s+(\d+(?:\.\d+)*)\s*:/);
-    if (mHeading) { currentPhase = mHeading[1]; continue; }
+    if (mHeading) { currentPhase = normalizePhaseNum(mHeading[1]); continue; }
     if (currentPhase) {
       const mGoal = line.match(/^\*\*Goal\*\*\s*:?\s*(.+)/);
       if (mGoal) {
@@ -853,7 +853,7 @@ function createServer(sources) {
 
       // Attach dependsOn to each phase from the roadmap deps map
       for (const phase of phases) {
-        phase.dependsOn = dependencies[phase.numStr] || [];
+        phase.dependsOn = dependencies[phase.displayNum] || [];
       }
 
       // Derive current phase name from phases array
@@ -927,7 +927,7 @@ function createServer(sources) {
       phaseNames = parseRoadmapPhaseNames(roadmapSrc);
       phaseGoals = parseRoadmapPhaseGoals(roadmapSrc);
       for (const phase of phases) {
-        phase.dependsOn = dependencies[phase.numStr] || [];
+        phase.dependsOn = dependencies[phase.displayNum] || [];
       }
     }
 
@@ -1049,9 +1049,15 @@ function createServer(sources) {
     //      First source that returns content wins.
     //      If none have the file → 404.
 
+    // If a source is specified, restrict to that source only
+    const sourceName = request.query.source;
+    const candidateSources = sourceName
+      ? activeSources.filter(s => s.name === sourceName)
+      : activeSources;
+
     // Step 1: Compute which sources the path is geometrically within (no existence check)
     const allowedSources = [];
-    for (const source of activeSources) {
+    for (const source of candidateSources) {
       let realBase;
       try {
         realBase = await fs.realpath(path.resolve(source.path));

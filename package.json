@@ -1,6 +1,6 @@
 {
   "name": "gsd-browser",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Browse markdown artifacts that AI agents write, fresh from disk",
   "main": "src/server.js",
   "bin": {
